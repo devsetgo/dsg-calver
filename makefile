@@ -1,12 +1,12 @@
 # Variables
-REPONAME = devsetgo_lib
+REPONAME = bumpcalver
 APP_VERSION = 2024-09-27-007
 PYTHON = python3
 PIP = $(PYTHON) -m pip
 PYTEST = $(PYTHON) -m pytest
 
 EXAMPLE_PATH = examples
-SERVICE_PATH = dsg_lib
+SERVICE_PATH = src
 TESTS_PATH = tests
 SQLITE_PATH = _sqlite_db
 LOG_PATH = log
