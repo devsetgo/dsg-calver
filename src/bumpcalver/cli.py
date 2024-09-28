@@ -1,6 +1,6 @@
 import os
 import re
-import subprocess  # Added for running Git commands
+import subprocess
 from datetime import datetime
 import click
 import toml
@@ -108,7 +108,9 @@ def update_version_in_files(new_version, file_configs):
             with open(file_path, "w") as file:
                 file.write(new_content)
             print(f"Updated {file_path}")
-            files_updated.append(file_path)
+            # Store relative paths for git commands
+            relative_path = os.path.relpath(file_path, start=os.getcwd())
+            files_updated.append(relative_path)
         except FileNotFoundError:
             print(f"{file_path} not found")
         except Exception as e:
@@ -126,11 +128,12 @@ def load_config():
             config["timezone"] = bumpcalver_config.get("timezone", "America/New_York")
             config["file_configs"] = bumpcalver_config.get("file", [])
             config["git_tag"] = bumpcalver_config.get("git_tag", False)
+            config["auto_commit"] = bumpcalver_config.get("auto_commit", False)
         except toml.TomlDecodeError as e:
             print(f"Error parsing pyproject.toml: {e}")
     return config
 
-def create_git_tag(version):
+def create_git_tag(version, files_to_commit, auto_commit):
     try:
         # Check if in a Git repository
         subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -139,29 +142,37 @@ def create_git_tag(version):
         return
 
     try:
-        # Stage changes
-        subprocess.run(["git", "add", "."], check=True)
-        # Commit changes
-        commit_message = f"Bump version to {version}"
-        subprocess.run(["git", "commit", "-m", commit_message], check=True)
+        if auto_commit:
+            if files_to_commit:
+                # Stage only the updated files
+                subprocess.run(["git", "add"] + files_to_commit, check=True)
+                # Commit changes
+                commit_message = f"Bump version to {version}"
+                subprocess.run(["git", "commit", "-m", commit_message], check=True)
+            else:
+                print("No files were updated. Skipping Git commit.")
+        else:
+            print("Auto-commit is disabled. Tagging current commit.")
+
         # Create Git tag
         subprocess.run(["git", "tag", version], check=True)
         print(f"Created Git tag '{version}'")
     except subprocess.CalledProcessError as e:
-        print(f"Error creating Git tag: {e}")
-        
+        print(f"Error during Git operations: {e}")
 
 @click.command()
 @click.option("--beta", is_flag=True, help="Use beta versioning")
 @click.option("--build", is_flag=True, help="Use build count versioning")
 @click.option("--timezone", help="Timezone for date calculations (default: value from config or America/New_York)")
 @click.option("--git-tag/--no-git-tag", default=None, help="Create a Git tag with the new version")
-def main(beta, build, timezone, git_tag):
+@click.option("--auto-commit/--no-auto-commit", default=None, help="Automatically commit changes when creating a Git tag")
+def main(beta, build, timezone, git_tag, auto_commit):
     config = load_config()
     version_format = config.get("version_format", "{current_date}-{build_count:03}")
     file_configs = config.get("file_configs", [])
     config_timezone = config.get("timezone", "America/New_York")
     config_git_tag = config.get("git_tag", False)
+    config_auto_commit = config.get("auto_commit", False)
 
     if not file_configs:
         print("No files specified in the configuration.")
@@ -173,6 +184,10 @@ def main(beta, build, timezone, git_tag):
     # Determine whether to create a Git tag
     if git_tag is None:
         git_tag = config_git_tag
+
+    # Determine whether to auto-commit changes
+    if auto_commit is None:
+        auto_commit = config_auto_commit
 
     # Adjust the base directory
     project_root = os.getcwd()
@@ -196,6 +211,6 @@ def main(beta, build, timezone, git_tag):
 
     # Create a Git tag if enabled
     if git_tag:
-        create_git_tag(new_version)
+        create_git_tag(new_version, files_updated, auto_commit)
 
     print(f"Updated version to {new_version} in specified files.")
