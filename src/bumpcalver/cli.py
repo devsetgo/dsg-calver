@@ -149,6 +149,7 @@ def create_git_tag(version):
         print(f"Created Git tag '{version}'")
     except subprocess.CalledProcessError as e:
         print(f"Error creating Git tag: {e}")
+        
 
 @click.command()
 @click.option("--beta", is_flag=True, help="Use beta versioning")
