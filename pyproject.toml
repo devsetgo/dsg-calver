@@ -29,7 +29,6 @@ classifiers = [
 dependencies = [
     "click>=8.0",
     "toml>=0.10.2",
-    "pytz>=2023.1",
 ]
 
 [project.urls]
