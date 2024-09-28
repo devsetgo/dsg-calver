@@ -1,67 +1,69 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.16.0"]
 build-backend = "hatchling.build"
 
 [project]
 name = "bumpcalver"
 version = "0.1.0"
 requires-python = ">=3.10"
-description = """
-A CLI tool for calendar-based version bumping
-"""
-keywords = ["python", "library", "calendar versioning", "calver", "versioning", "cli"]
+description = "A CLI tool for calendar-based version bumping"
+keywords = [
+    "python",
+    "library",
+    "calendar versioning",
+    "calver",
+    "versioning",
+    "cli"
+]
 readme = "README.md"
-authors = [{ name = "Your Name", email = "you@example.com" }]
-# If you have maintainers, you can add them here
-# maintainers = [
-#     { name = "Maintainer Name", email = "maintainer@example.com" },
-# ]
+authors = [{ name = "Mike Ryan", email = "mikeryan56@gmail.com" }]
 license = { file = "LICENSE" }
 classifiers = [
+    # Add your classifiers here
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Operating System :: POSIX :: Linux",
-    "Operating System :: MacOS :: MacOS X",
-    "Operating System :: Microsoft :: Windows",
 ]
-
 dependencies = [
     "click>=8.0",
     "toml>=0.10.2",
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/bumpcalver"
-Documentation = "https://yourusername.github.io/bumpcalver/"
-Repository = "https://github.com/yourusername/bumpcalver"
+Homepage = "https://github.com/devsetgo/bumpcalver"
+Documentation = "https://devsetgo.github.io/bumpcalver/"
+Repository = "https://github.com/devsetgo/bumpcalver"
 
 [project.scripts]
 bumpcalver = "bumpcalver.cli:main"
 
-[tool.hatch.build.targets.sdist]
-include = [
-  "/bumpcalver",
-  # "/tests",  # Uncomment if you want to include tests
-]
-exclude = [
-  "*.json",
-  "pkg/_compat.py",
-]
+[tool.hatch]
+sources = [{path = "src", type = "directory"}]
 
-[tool.hatch.build.targets.wheel]
-packages = ["bumpcalver"]
+[tool.hatch.build]
+exclude = [
+    "*.json",
+    "pkg/_compat.py",
+]
 
 [tool.bumpcalver]
 version_format = "{current_date}-{build_count:03}"
-files = [
-    "src/__init__.py",
-    "Makefile"
-]
 
+[[tool.bumpcalver.file]]
+path = "src/bumpcalver/__init__.py"
+variable = "__version__"
+
+[[tool.bumpcalver.file]]
+path = "pyproject.toml"
+variable = "version"
+
+[[tool.bumpcalver.file]]
+path = "makefile"
+variable = "APP_VERSION"
+
+# Include other tool configurations (e.g., [tool.ruff], [tool.flake8], etc.)
 [tool.ruff]
 line-length = 100
 indent-width = 4
