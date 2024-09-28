@@ -56,7 +56,7 @@ auto_commit = false
 
 
 [[tool.bumpcalver.file]]
-path = "p.py"
+path = "examples/p.py"
 variable = "__version__"
 
 [[tool.bumpcalver.file]]
