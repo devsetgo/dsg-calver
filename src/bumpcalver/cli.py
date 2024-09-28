@@ -5,27 +5,27 @@ import re
 import subprocess
 import sys  # Added to handle exit
 from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import click
-import pytz
 import toml
 
 
 def get_current_date(timezone="America/New_York"):
     try:
-        tz = pytz.timezone(timezone)
-    except pytz.UnknownTimeZoneError:
+        tz = ZoneInfo(timezone)
+    except ZoneInfoNotFoundError:
         print(f"Unknown timezone '{timezone}'. Using default 'America/New_York'.")
-        tz = pytz.timezone("America/New_York")
+        tz = ZoneInfo("America/New_York")
     return datetime.now(tz).strftime("%Y-%m-%d")
 
 
 def get_current_datetime_version(timezone="America/New_York"):
     try:
-        tz = pytz.timezone(timezone)
-    except pytz.UnknownTimeZoneError:
+        tz = ZoneInfo(timezone)
+    except ZoneInfoNotFoundError:
         print(f"Unknown timezone '{timezone}'. Using default 'America/New_York'.")
-        tz = pytz.timezone("America/New_York")
+        tz = ZoneInfo("America/New_York")
     return datetime.now(tz).strftime("%Y-%m-%d-%H%M")
 
 
