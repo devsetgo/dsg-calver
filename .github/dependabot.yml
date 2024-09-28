@@ -30,7 +30,7 @@ updates:
       - "dependencies"
     commit-message:
       # Prefix all commit messages with "pip"
-      prefix: "github actionts"
+      prefix: "github actions"
       include: "scope"
     schedule:
       interval: 'monthly'
