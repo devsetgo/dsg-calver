@@ -10,26 +10,27 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import click
 import toml
 
+default_timzone = "America/New_York"
 
-def get_current_date(timezone="America/New_York"):
+def get_current_date(timezone=default_timzone):
     try:
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
-        print(f"Unknown timezone '{timezone}'. Using default 'America/New_York'.")
-        tz = ZoneInfo("America/New_York")
+        print(f"Unknown timezone '{timezone}'. Using default '{default_timzone}'.")
+        tz = ZoneInfo(default_timzone)
     return datetime.now(tz).strftime("%Y-%m-%d")
 
 
-def get_current_datetime_version(timezone="America/New_York"):
+def get_current_datetime_version(timezone=default_timzone):
     try:
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
-        print(f"Unknown timezone '{timezone}'. Using default 'America/New_York'.")
-        tz = ZoneInfo("America/New_York")
+        print(f"Unknown timezone '{timezone}'. Using default '{default_timzone}'.")
+        tz = ZoneInfo(default_timzone)
     return datetime.now(tz).strftime("%Y-%m-%d-%H%M")
 
 
-def get_build_version(file_config, version_format, timezone="America/New_York"):
+def get_build_version(file_config, version_format, timezone=default_timzone):
     current_date = get_current_date(timezone)
     build_count = 1
 
@@ -145,7 +146,7 @@ def load_config():
             config["version_format"] = bumpcalver_config.get(
                 "version_format", "{current_date}-{build_count:03}"
             )
-            config["timezone"] = bumpcalver_config.get("timezone", "America/New_York")
+            config["timezone"] = bumpcalver_config.get("timezone", default_timzone)
             config["file_configs"] = bumpcalver_config.get("file", [])
             config["git_tag"] = bumpcalver_config.get("git_tag", False)
             config["auto_commit"] = bumpcalver_config.get("auto_commit", False)
@@ -211,7 +212,7 @@ def main(beta, build, timezone, git_tag, auto_commit):
         sys.exit(1)
     version_format = config.get("version_format", "{current_date}-{build_count:03}")
     file_configs = config.get("file_configs", [])
-    config_timezone = config.get("timezone", "America/New_York")
+    config_timezone = config.get("timezone", default_timzone)
     config_git_tag = config.get("git_tag", False)
     config_auto_commit = config.get("auto_commit", False)
 
