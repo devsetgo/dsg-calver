@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bumpcalver"
-version = "2024-09-27-006"
+version = "2024-09-27-007"
 requires-python = ">=3.10"
 description = "A CLI tool for calendar-based version bumping"
 keywords = [
@@ -52,7 +52,7 @@ exclude = [
 version_format = "{current_date}-{build_count:03}"
 timezone = "America/New_York"
 git_tag = true
-auto_commit = true
+auto_commit = false
 
 
 [[tool.bumpcalver.file]]
