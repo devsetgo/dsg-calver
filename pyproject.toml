@@ -68,7 +68,7 @@ variable = "APP_VERSION"
 line-length = 100
 indent-width = 4
 unsafe-fixes = true
-target-version = "py312"
+target-P24-09-28-001"
 src = ["bumpcalver", "tests"]
 exclude = ["unreleased/*", "scripts/*", "coverage.xml", "coverage-badge.svg"]
 

@@ -1,5 +1,3 @@
-# src/bumpcalver/cli.py
-
 import os
 import re
 from datetime import datetime
@@ -12,25 +10,39 @@ def get_current_date():
 def get_current_datetime_version():
     return datetime.now().strftime("%Y-%m-%d-%H%M")
 
-def get_build_version(init_file, version_format):
+def get_build_version(file_config, version_format):
     current_date = get_current_date()
     build_count = 1
 
+    file_path = file_config['path']
+    variable = file_config.get('variable')
+    pattern = file_config.get('pattern')
+
     # Read the current version from the file
     try:
-        with open(init_file, "r") as file:
+        with open(file_path, "r") as file:
             content = file.read()
-            version_match = re.search(
-                r'__version__\s*=\s*["\'](?:beta-)?(\d{4}-\d{2}-\d{2})(?:-(\d{3}))?["\']',
-                content,
-            )
+
+            # Construct the regex pattern to find the version
+            if variable:
+                version_pattern = re.compile(r'{}\s*=\s*["\'](?:beta-)?(\d{{4}}-\d{{2}}-\d{{2}})(?:-(\d{{3}}))?["\']'.format(re.escape(variable)))
+            elif pattern:
+                # Adjust pattern to capture date and build count
+                version_pattern = re.compile(pattern)
+            else:
+                print(f"No variable or pattern specified for file {file_path}")
+                return version_format.format(current_date=current_date, build_count=build_count)
+
+            version_match = version_pattern.search(content)
             if version_match:
-                last_date, last_count = version_match.groups()
+                # Extract last_date and last_count based on captured groups
+                last_date = version_match.group(1)
+                last_count = version_match.group(2)
                 last_count = int(last_count or 0)
                 if last_date == current_date:
                     build_count = last_count + 1
     except FileNotFoundError:
-        print(f"{init_file} not found")
+        print(f"{file_path} not found")
 
     return version_format.format(current_date=current_date, build_count=build_count)
 
@@ -97,20 +109,11 @@ def main(beta, build):
     for file_config in file_configs:
         file_config['path'] = os.path.join(project_root, file_config['path'])
 
-    # Check if any of the files exist
-    init_file = None
-    for file_config in file_configs:
-        if os.path.exists(file_config['path']):
-            init_file = file_config['path']
-            break
-
-    if not init_file:
-        print("None of the specified files were found.")
-        return
-
     # Get the new version
     if build:
-        new_version = get_build_version(init_file, version_format)
+        # Use the first file config for getting the build count
+        init_file_config = file_configs[0]
+        new_version = get_build_version(init_file_config, version_format)
     else:
         new_version = get_current_datetime_version()
 
