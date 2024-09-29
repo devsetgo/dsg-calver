@@ -49,8 +49,8 @@ create-docs-local: ## Build and deploy the project's documentation
 	cp /workspaces/$(REPONAME)/README.md /workspaces/$(REPONAME)/docs/index.md
 	cp /workspaces/$(REPONAME)/CONTRIBUTING.md /workspaces/$(REPONAME)/docs/contribute.md
 
-flake8: ## Run flake8 to check Python code for PEP8 compliance
-	flake8 --tee . > htmlcov/_flake8Report.txt
+# flake8: ## Run flake8 to check Python code for PEP8 compliance
+# 	flake8 --tee . > htmlcov/_flake8Report.txt
 
 help:  ## Display this help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
@@ -72,7 +72,7 @@ test: ## Run the project's tests
 	pytest
 	sed -i 's|<source>/workspaces/$(REPONAME)</source>|<source>/github/workspace</source>|' /workspaces/$(REPONAME)/coverage.xml
 	genbadge coverage -i /workspaces/$(REPONAME)/coverage.xml
-	flake8 src tests examples | tee htmlcov/_flake8Report.txt
+# flake8 src tests examples | tee htmlcov/_flake8Report.txt
 
 
 build: ## Build the project

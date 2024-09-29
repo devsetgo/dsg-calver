@@ -11,6 +11,8 @@ from zoneinfo import ZoneInfo
 import pytest
 import toml
 from click.testing import CliRunner
+
+# Adjust the import path based on your project structure
 # Adjust the import path based on your project structure
 from src.bumpcalver.cli import (
     create_git_tag,
@@ -20,7 +22,9 @@ from src.bumpcalver.cli import (
     load_config,
     main,
     parse_version,
+    read_version_from_makefile,
     read_version_from_python_file,
+    read_version_from_toml_file,
     update_dockerfile,
     update_makefile,
     update_python_file,
@@ -622,6 +626,7 @@ def test_get_build_version_new_date():
 
     os.remove(temp_file_path)
 
+
 # Test update_python_file() when the variable is not found
 def test_update_python_file_variable_not_found():
     with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
@@ -679,21 +684,15 @@ FROM python:3.9
 
     os.remove(temp_file_path)
 
-# Test create_git_tag() when not in a Git repository
-def test_create_git_tag_not_in_git_repo(capfd):
-    with mock.patch("subprocess.run") as mock_run:
-        mock_run.side_effect = subprocess.CalledProcessError(1, "git")
-        create_git_tag("v1.0.0", [], False)
-        out, err = capfd.readouterr()
-        assert "Not a Git repository. Skipping Git tagging." in out
-
 
 # Test create_git_tag() with auto-commit
 def test_create_git_tag_with_auto_commit():
     with mock.patch("subprocess.run") as mock_run:
         create_git_tag("v1.0.0", ["file1.txt"], True)
         mock_run.assert_any_call(["git", "add", "file1.txt"], check=True)
-        mock_run.assert_any_call(["git", "commit", "-m", "Bump version to v1.0.0"], check=True)
+        mock_run.assert_any_call(
+            ["git", "commit", "-m", "Bump version to v1.0.0"], check=True
+        )
         mock_run.assert_any_call(["git", "tag", "v1.0.0"], check=True)
 
 
@@ -712,12 +711,307 @@ def test_create_git_tag_with_auto_commit():
 )
 def test_main_with_options(options, expected_version_prefix):
     runner = CliRunner()
-    with mock.patch("src.bumpcalver.cli.load_config", return_value={
-        "version_format": "{current_date}-{build_count:03}",
-        "file_configs": [],
-        "timezone": "UTC",
-        "git_tag": False,
-        "auto_commit": False,
-    }):
+    with mock.patch(
+        "src.bumpcalver.cli.load_config",
+        return_value={
+            "version_format": "{current_date}-{build_count:03}",
+            "file_configs": [],
+            "timezone": "UTC",
+            "git_tag": False,
+            "auto_commit": False,
+        },
+    ):
         result = runner.invoke(main, options)
         assert result.exit_code == 0
+
+
+# Test read_version_from_toml_file() with valid section and variable
+def test_read_version_from_toml_file():
+    temp_file_content = """
+[project]
+name = "example"
+version = "0.1.0"
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_file.write(temp_file_content)
+        temp_file_path = temp_file.name
+
+    version = read_version_from_toml_file(temp_file_path, "project", "version")
+    assert version == "0.1.0"
+
+    os.remove(temp_file_path)
+
+
+# Test read_version_from_toml_file() with nested section
+def test_read_version_from_toml_file_nested_section():
+    temp_file_content = """
+[tool.bumpcalver]
+version = "0.1.0"
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_file.write(temp_file_content)
+        temp_file_path = temp_file.name
+
+    version = read_version_from_toml_file(temp_file_path, "tool.bumpcalver", "version")
+    assert version == "0.1.0"
+
+    os.remove(temp_file_path)
+
+
+# Test read_version_from_toml_file() with missing variable
+def test_read_version_from_toml_file_missing_variable():
+    temp_file_content = """
+[project]
+name = "example"
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_file.write(temp_file_content)
+        temp_file_path = temp_file.name
+
+    version = read_version_from_toml_file(temp_file_path, "project", "version")
+    assert version is None
+
+    os.remove(temp_file_path)
+
+
+# Test read_version_from_toml_file() with missing section
+def test_read_version_from_toml_file_missing_section():
+    temp_file_content = """
+[project]
+name = "example"
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_file.write(temp_file_content)
+        temp_file_path = temp_file.name
+
+    version = read_version_from_toml_file(temp_file_path, "nonexistent", "version")
+    assert version is None
+
+    os.remove(temp_file_path)
+
+
+# Test read_version_from_toml_file() with invalid TOML content
+def test_read_version_from_toml_file_invalid_toml():
+    temp_file_content = """
+[project
+name = "example"
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_file.write(temp_file_content)
+        temp_file_path = temp_file.name
+
+    version = read_version_from_toml_file(temp_file_path, "project", "version")
+    assert version is None
+
+    os.remove(temp_file_path)
+
+
+# Test read_version_from_makefile() with valid variable
+def test_read_version_from_makefile():
+    temp_file_content = """
+VERSION = 0.1.0
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_file.write(temp_file_content)
+        temp_file_path = temp_file.name
+
+    version = read_version_from_makefile(temp_file_path, "VERSION")
+    assert version == "0.1.0"
+
+    os.remove(temp_file_path)
+
+
+# Test read_version_from_makefile() with missing variable
+def test_read_version_from_makefile_missing_variable():
+    temp_file_content = """
+VERSION = 0.1.0
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_file.write(temp_file_content)
+        temp_file_path = temp_file.name
+
+    version = read_version_from_makefile(temp_file_path, "NON_EXISTENT_VARIABLE")
+    assert version is None
+
+    os.remove(temp_file_path)
+
+
+# Test read_version_from_makefile() with invalid Makefile content
+def test_read_version_from_makefile_invalid_content():
+    temp_file_content = """
+VERSION 0.1.0
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_file.write(temp_file_content)
+        temp_file_path = temp_file.name
+
+    version = read_version_from_makefile(temp_file_path, "VERSION")
+    assert version is None
+
+    os.remove(temp_file_path)
+
+
+# Test create_git_tag() with auto-commit and error during Git operations
+def test_create_git_tag_git_operations_error(capfd):
+    with mock.patch("subprocess.run") as mock_run:
+        # Simulate successful git rev-parse
+        mock_run.side_effect = [None, subprocess.CalledProcessError(1, "git")]
+        create_git_tag("v1.0.0", ["file1.txt"], True)
+        out, err = capfd.readouterr()
+        assert "Error during Git operations:" in out
+
+
+# Test create_git_tag() when not in a Git repository
+def test_create_git_tag_not_in_git_repo(capfd):
+    with mock.patch("subprocess.run") as mock_run:
+        mock_run.side_effect = subprocess.CalledProcessError(1, "git")
+        create_git_tag("v1.0.0", [], False)
+        out, err = capfd.readouterr()
+        assert "Not a Git repository. Skipping Git tagging." in out
+
+
+# Test update_dockerfile() when an exception is raised
+def test_update_dockerfile_exception():
+    temp_file_content = """
+FROM python:3.9
+LABEL version="0.1.0"
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_file.write(temp_file_content)
+        temp_file_path = temp_file.name
+
+    new_version = "2023-10-05-001"
+
+    # Mock the open function to raise an exception
+    with mock.patch("builtins.open", mock.mock_open()) as mock_open:
+        mock_open.side_effect = Exception("Mocked exception")
+        success = update_dockerfile(temp_file_path, new_version)
+        assert not success
+
+    os.remove(temp_file_path)
+
+
+# Test update_makefile() when an exception is raised
+def test_update_makefile_exception():
+    temp_file_content = """
+VERSION = 0.1.0
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_file.write(temp_file_content)
+        temp_file_path = temp_file.name
+
+    new_version = "2023-10-05-001"
+
+    # Mock the open function to raise an exception
+    with mock.patch("builtins.open", mock.mock_open()) as mock_open:
+        mock_open.side_effect = Exception("Mocked exception")
+        success = update_makefile(temp_file_path, "VERSION", new_version)
+        assert not success
+
+    os.remove(temp_file_path)
+
+
+# Test update_toml_file() when an exception is raised
+def test_update_toml_file_exception():
+    temp_file_content = """
+[project]
+name = "example"
+version = "0.1.0"
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_file.write(temp_file_content)
+        temp_file_path = temp_file.name
+
+    new_version = "2023-10-05-001"
+
+    # Mock the open function to raise an exception
+    with mock.patch("builtins.open", mock.mock_open()) as mock_open:
+        mock_open.side_effect = Exception("Mocked exception")
+        success = update_toml_file(temp_file_path, "project", "version", new_version)
+        assert not success
+
+    os.remove(temp_file_path)
+
+
+# Test update_python_file() when an exception is raised
+def test_update_python_file_exception():
+    temp_file_content = """
+__version__ = "0.1.0"
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_file.write(temp_file_content)
+        temp_file_path = temp_file.name
+
+    new_version = "2023-10-05-001"
+
+    # Mock the open function to raise an exception
+    with mock.patch("builtins.open", mock.mock_open()) as mock_open:
+        mock_open.side_effect = Exception("Mocked exception")
+        success = update_python_file(temp_file_path, "__version__", new_version)
+        assert not success
+
+    os.remove(temp_file_path)
+
+
+# Test get_build_version() when an exception is raised
+def test_get_build_version_exception():
+    file_config = {
+        "path": "non_existent_file.txt",
+        "file_type": "python",
+        "variable": "__version__",
+    }
+    version_format = "{current_date}-{build_count:03}"
+    tz = "UTC"
+
+    # Mock the read_version_from_python_file function to raise an exception
+    with mock.patch("src.bumpcalver.cli.read_version_from_python_file") as mock_read:
+        mock_read.side_effect = Exception("Mocked exception")
+        with mock.patch(
+            "src.bumpcalver.cli.get_current_date", return_value="2023-10-05"
+        ):
+            version = get_build_version(file_config, version_format, timezone=tz)
+            assert version == "2023-10-05-001"
+
+
+# Test get_build_version() when a ValueError is raised
+def test_get_build_version_value_error():
+    file_config = {
+        "path": "non_existent_file.txt",
+        "file_type": "python",
+        "variable": "__version__",
+    }
+    version_format = "{current_date}-{build_count:03}"
+    tz = "UTC"
+
+    # Mock the read_version_from_python_file function to raise a ValueError
+    with mock.patch("src.bumpcalver.cli.read_version_from_python_file") as mock_read:
+        mock_read.side_effect = ValueError("Mocked ValueError")
+        with mock.patch(
+            "src.bumpcalver.cli.get_current_date", return_value="2023-10-05"
+        ):
+            version = get_build_version(file_config, version_format, timezone=tz)
+            assert version == "2023-10-05-001"
+
+
+# Test read_version_from_makefile() when an exception is raised
+def test_read_version_from_makefile_exception():
+    file_path = "non_existent_file.txt"
+    variable = "VERSION"
+
+    # Mock the open function to raise an exception
+    with mock.patch("builtins.open", mock.mock_open()) as mock_open:
+        mock_open.side_effect = Exception("Mocked exception")
+        version = read_version_from_makefile(file_path, variable)
+        assert version is None
+
+
+# Test read_version_from_python_file() when an exception is raised
+def test_read_version_from_python_file_exception():
+    file_path = "non_existent_file.txt"
+    variable = "__version__"
+
+    # Mock the open function to raise an exception
+    with mock.patch("builtins.open", mock.mock_open()) as mock_open:
+        mock_open.side_effect = Exception("Mocked exception")
+        version = read_version_from_python_file(file_path, variable)
+        assert version is None

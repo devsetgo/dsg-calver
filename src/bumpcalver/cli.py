@@ -1,5 +1,17 @@
 # src/bumpcalver/cli.py
+"""
+This module provides functions for version management and date handling
+for the bumpcalver library.
 
+Functions:
+    get_current_date: Get the current date in a specified timezone.
+    get_current_datetime_version: Get the current datetime version in a specified timezone.
+    parse_version: Parse a version string.
+    read_version_from_python_file: Read the version from a Python file.
+    read_version_from_toml_file: Read the version from a TOML file.
+    read_version_from_makefile: Read the version from a Makefile.
+    get_build_version: Get the build version based on the configuration and format.
+"""
 import logging
 import os
 import re
@@ -13,24 +25,54 @@ import toml
 
 logger = logging.getLogger(__name__)
 
-default_timezone = "America/New_York"
+default_timezone: str = "America/New_York"
 
 
-def get_current_date(timezone=default_timezone):
+def get_current_date(timezone: str = default_timezone) -> str:
+    """Get the current date in a specified timezone.
+
+    This function returns the current date formatted as 'YYYY-MM-DD' in the specified timezone.
+    If the specified timezone is not found, it defaults to 'America/New_York'.
+
+    Args:
+        timezone (str): The timezone to use. Defaults to 'America/New_York'.
+
+    Returns:
+        str: The current date in the specified timezone formatted as 'YYYY-MM-DD'.
+    """
     try:
+        # Attempt to get the specified timezone
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
+        # If the timezone is not found, print a message and use the default timezone
         print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
         tz = ZoneInfo(default_timezone)
+
+    # Get the current date in the specified timezone and format it as 'YYYY-MM-DD'
     return datetime.now(tz).strftime("%Y-%m-%d")
 
 
-def get_current_datetime_version(timezone=default_timezone):
+def get_current_datetime_version(timezone: str = default_timezone) -> str:
+    """Get the current datetime version in a specified timezone.
+
+    This function returns the current datetime formatted as 'YYYY-MM-DD-HHMM' in the specified timezone.
+    If the specified timezone is not found, it defaults to 'America/New_York'.
+
+    Args:
+        timezone (str): The timezone to use. Defaults to 'America/New_York'.
+
+    Returns:
+        str: The current datetime in the specified timezone formatted as 'YYYY-MM-DD-HHMM'.
+    """
     try:
+        # Attempt to get the specified timezone
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
+        # If the timezone is not found, print a message and use the default timezone
         print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
         tz = ZoneInfo(default_timezone)
+
+    # Get the current datetime in the specified timezone and format it as 'YYYY-MM-DD-HHMM'
     return datetime.now(tz).strftime("%Y-%m-%d-%H%M")
 
 
