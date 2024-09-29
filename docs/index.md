@@ -25,96 +25,125 @@ SonarCloud:
 
 
 
-# DevSetGo Common Library
+# BumpCalver CLI Documentation
 
-`devsetgo_lib` is a versatile library designed to provide common functions for Python applications. Its main goal is to increase reusability and reduce the need to rewrite the same functions across multiple applications. This also allows for quick defect resolution and propagation of fixes across all dependent projects.
+## Overview
 
-## Key Features
-
-### **Common Functions**:
-  - **File Operations**:
-    - **CSV, JSON, and Text File Functions**: Create, read, write, and manipulate various file types with ease.
-    - **Folder Functions**: Create and remove directories, list directory contents, and manage file system operations efficiently.
-
-  - **Logging**:
-    Comprehensive logging setup using the [Loguru Library]('https://loguru.readthedocs.io/en/stable/overview.html'). Provides extensive customization options for log configuration, including log rotation, retention, and formatting. Includes improvements for multiprocessing environments to ensure log messages are handled correctly across multiple processes.
-
-  - **Calendar Functions**:
-      Convert between month names and numbers seamlessly.
-
-  - **Pattern Matching**:
-      Powerful tools for searching patterns in text using regular expressions.
-
-
-### **FastAPI Endpoints**:
-  - Pre-built endpoints for system health checks, status, and uptime monitoring.
-  - Functions to generate HTTP response codes easily.
-
-### **Async Database**:
-  - Configuration and management of asynchronous database sessions.
-  - CRUD operations with async support.
+The **BumpCalver CLI** is a command-line interface for calendar-based version bumping. It automates the process of updating version strings in your project's files based on the current date and build count. Additionally, it can create Git tags and commit changes automatically. The CLI is highly configurable via a `pyproject.toml` file and supports various customization options to fit your project's needs.
 
 ---
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+  - [Example Configuration](#example-configuration)
+- [Command-Line Usage](#command-line-usage)
+  - [Options](#options)
+- [Functions](#functions)
+  - [`get_current_date()`](#get_current_date)
+  - [`get_current_datetime_version()`](#get_current_datetime_version)
+  - [`get_build_version()`](#get_build_version)
+  - [`update_version_in_files()`](#update_version_in_files)
+  - [`load_config()`](#load_config)
+  - [`create_git_tag()`](#create_git_tag)
+  - [`main()`](#main)
+- [Examples](#examples)
+- [Error Handling](#error-handling)
+- [License](#license)
+
+---
+
 ## Installation
 
-To install `devsetgo_lib`, use pip:
+To install the BumpCalver CLI, you can add it to your project's dependencies. If it's packaged as a Python module, you might install it via:
 
-```sh
-pip install devsetgo-lib
-
-# For async database setup with SQLite or PostgreSQL
-pip install devsetgo-lib[sqlite]
-pip install devsetgo-lib[postgres]
-
-# Experimental support for other databases
-pip install devsetgo-lib[oracle]
-pip install devsetgo-lib[mssql]
-pip install devsetgo-lib[mysql]
-
-# For adding FastAPI endpoints
-pip install devsetgo-lib[fastapi]
-
-# Install everything
-pip install devsetgo-lib[all]
+```bash
+pip install bumpcalver
 ```
 
-## Usage
+*Note: Replace the installation command with the actual method based on how the package is distributed.*
 
-Here's a quick example to demonstrate how you can use some of the key features of `devsetgo_lib`:
+---
 
-```python
-from devsetgo_lib.common_functions import file_functions, logging_config, patterns, calendar_functions
+## Getting Started
 
-# File Operations
-file_functions.create_sample_files("example", 100)
-content = file_functions.read_from_file("example.csv")
-print(content)
+1. **Configure Your Project**: Create or update the `pyproject.toml` file in your project's root directory to include the `[tool.bumpcalver]` section with your desired settings.
 
-# Logging
-logging_config.config_log(logging_directory='logs', log_name='app.log', logging_level='DEBUG')
-logger = logging.getLogger('app_logger')
-logger.info("This is an info message")
+2. **Run the CLI**: Use the `bumpcalver` command with appropriate options to bump your project's version.
 
-# Pattern Matching
-text = "Hello, my name is 'John Doe' and I live in 'New York'."
-results = patterns.pattern_between_two_char(text, "'", "'")
-print(results)
+Example:
 
-# Calendar Functions
-print(calendar_functions.get_month(1))  # Output: 'January'
-print(calendar_functions.get_month_number('January'))  # Output: 1
+```bash
+bumpcalver --build --git-tag --auto-commit
 ```
 
-For detailed documentation on each module and function, please refer to the [official documentation](https://devsetgo.github.io/devsetgo_lib/print_page/).
+---
 
-## Contributing
+## Configuration
 
-We welcome contributions! Please see our [contributing guidelines](CONTRIBUTING.md) for more details.
+The BumpCalver CLI relies on a `pyproject.toml` configuration file located at the root of your project. This file specifies how versioning should be handled, which files to update, and other settings.
 
-## License
+### Configuration Options
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+- `version_format` (string): Format string for the version. Should include `{current_date}` and `{build_count}` placeholders.
+- `timezone` (string): Timezone for date calculations (e.g., `UTC`, `America/New_York`).
+- `file` (list of tables): Specifies which files to update and how to find the version string.
+  - `path` (string): Path to the file to be updated.
+  - `variable` (string, optional): The variable name that holds the version string in the file.
+  - `pattern` (string, optional): A regex pattern to find the version string.
+- `git_tag` (boolean): Whether to create a Git tag with the new version.
+- `auto_commit` (boolean): Whether to automatically commit changes when creating a Git tag.
 
-## Contact
+### Example Configuration
 
-For any questions or issues, please open an issue on GitHub or contact us at [devsetgo@example.com](mailto:devsetgo@example.com).
+```toml
+[tool.bumpcalver]
+version_format = "{current_date}-{build_count:03}"
+timezone = "UTC"
+git_tag = true
+auto_commit = true
+
+[[tool.bumpcalver.file]]
+path = "version.py"
+variable = "__version__"
+```
+
+---
+
+## Command-Line Usage
+
+The CLI provides several options to customize the version bumping process.
+
+```bash
+Usage: bumpcalver [OPTIONS]
+
+Options:
+  --beta                      Use beta versioning.
+  --build                     Use build count versioning.
+  --timezone TEXT             Timezone for date calculations (default: value
+                              from config or America/New_York).
+  --git-tag / --no-git-tag    Create a Git tag with the new version.
+  --auto-commit / --no-auto-commit
+                              Automatically commit changes when creating a Git
+                              tag.
+  --help                      Show this message and exit.
+```
+
+### Options
+
+- `--beta`: Prefixes the version with `beta-`.
+- `--build`: Increments the build count based on the current date.
+- `--timezone`: Overrides the timezone specified in the configuration.
+- `--git-tag` / `--no-git-tag`: Forces Git tagging on or off, overriding the configuration.
+- `--auto-commit` / `--no-auto-commit`: Forces auto-commit on or off, overriding the configuration.
+
+---
+## Support
+
+For issues or questions, please contact [support@example.com](mailto:support@example.com) or open an issue on the project's repository.
+
+---
+
+*Note: Replace placeholder texts like support email and repository links with actual information relevant to your project.*
