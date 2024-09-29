@@ -1,5 +1,4 @@
-__version__ = "2024-09-28-007"
-
+__version__ = "2024-09-29-004"
 from datetime import datetime
 from zoneinfo import ZoneInfo, available_timezones
 
@@ -12,10 +11,10 @@ for tz_name in sorted(available_timezones()):
     offset = tz.utcoffset(now)
 
     if offset is None:
-        offset_str = 'Unknown'
+        offset_str = "Unknown"
     else:
         total_seconds = offset.total_seconds()
-        sign = '+' if total_seconds >= 0 else '-'
+        sign = "+" if total_seconds >= 0 else "-"
         total_seconds = abs(total_seconds)
         hours, remainder = divmod(total_seconds, 3600)
         minutes, _ = divmod(remainder, 60)
