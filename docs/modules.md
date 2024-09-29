@@ -247,4 +247,3 @@ This function is decorated with `click.command()` and is intended to be run from
 - **File Configuration**: You can specify multiple files in the `file` section of the configuration to update version strings in different places.
 
 - **Version Patterns**: If the `variable` approach doesn't suit your files, you can use regex `pattern` to locate and replace the version string.
-

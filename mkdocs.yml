@@ -1,15 +1,13 @@
 
-site_name: 'DevSetGo Calver Library'
+site_name: 'BumpCalver Library'
 # Project information
 site_description: 'Simple Calendar Versioning Library'
 site_author: 'Mike Ryan'
-# site_url: 'https://squidfunk.github.io/mkdocs-material/'
-# Repository
-repo_name: 'devsetgo/dsg-calver'
-repo_url: 'https://github.com/devsetgo/overwrite_description	'
+repo_name: 'devsetgo/bumpcalver'
+repo_url: 'https://github.com/devsetgo/bumpcalver'
 
 # Copyright
-copyright: 'Copyright &copy; 2016 - 2024 Mike Ryan'
+copyright: 'Copyright &copy; 2024 - 2025 Mike Ryan'
 
 nav:
     - Introduction: 'index.md'

@@ -41,17 +41,8 @@ The **BumpCalver CLI** is a command-line interface for calendar-based version bu
   - [Example Configuration](#example-configuration)
 - [Command-Line Usage](#command-line-usage)
   - [Options](#options)
-- [Functions](#functions)
-  - [`get_current_date()`](#get_current_date)
-  - [`get_current_datetime_version()`](#get_current_datetime_version)
-  - [`get_build_version()`](#get_build_version)
-  - [`update_version_in_files()`](#update_version_in_files)
-  - [`load_config()`](#load_config)
-  - [`create_git_tag()`](#create_git_tag)
-  - [`main()`](#main)
 - [Examples](#examples)
-- [Error Handling](#error-handling)
-- [License](#license)
+
 
 ---
 
@@ -190,7 +181,6 @@ bumpcalver --build --git-tag --auto-commit
 - **Malformed Configuration**: If the `pyproject.toml` file is malformed, an error is printed, and the program exits.
 
 ---
-
 
 ## Support
 

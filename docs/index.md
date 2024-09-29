@@ -1,27 +1,27 @@
 Python:
 
-[![PyPI version fury.io](https://badge.fury.io/py/devsetgo-lib.svg)](https://pypi.python.org/pypi/devsetgo-lib/)
-[![Downloads](https://static.pepy.tech/badge/devsetgo-lib)](https://pepy.tech/project/devsetgo-lib)
-[![Downloads](https://static.pepy.tech/badge/devsetgo-lib/month)](https://pepy.tech/project/devsetgo-lib)
-[![Downloads](https://static.pepy.tech/badge/devsetgo-lib/week)](https://pepy.tech/project/devsetgo-lib)
+[![PyPI version fury.io](https://badge.fury.io/py/bumpcalver.svg)](https://pypi.python.org/pypi/bumpcalver/)
+[![Downloads](https://static.pepy.tech/badge/bumpcalver)](https://pepy.tech/project/bumpcalver)
+[![Downloads](https://static.pepy.tech/badge/bumpcalver/month)](https://pepy.tech/project/bumpcalver)
+[![Downloads](https://static.pepy.tech/badge/bumpcalver/week)](https://pepy.tech/project/bumpcalver)
 
 Support Python Versions
 
-![Static Badge](https://img.shields.io/badge/Python-3.12%20%7C%203.11%20%7C%203.10%20%7C%203.9-blue)
+![Static Badge](https://img.shields.io/badge/Python-3.12%20%7C%203.11%20%7C%203.10%20-blue)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 CI/CD Pipeline:
 
-[![Testing - Main](https://github.com/devsetgo/devsetgo_lib/actions/workflows/testing.yml/badge.svg?branch=main)](https://github.com/devsetgo/devsetgo_lib/actions/workflows/testing.yml)
-[![Testing - Dev](https://github.com/devsetgo/devsetgo_lib/actions/workflows/testing.yml/badge.svg?branch=dev)](https://github.com/devsetgo/devsetgo_lib/actions/workflows/testing.yml)
+[![Testing - Main](https://github.com/devsetgo/bumpcalver/actions/workflows/testing.yml/badge.svg?branch=main)](https://github.com/devsetgo/bumpcalver/actions/workflows/testing.yml)
+[![Testing - Dev](https://github.com/devsetgo/bumpcalver/actions/workflows/testing.yml/badge.svg?branch=dev)](https://github.com/devsetgo/bumpcalver/actions/workflows/testing.yml)
 
 SonarCloud:
 
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_devsetgo_lib&metric=coverage)](https://sonarcloud.io/dashboard?id=devsetgo_devsetgo_lib)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_devsetgo_lib&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=devsetgo_devsetgo_lib)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_devsetgo_lib&metric=alert_status)](https://sonarcloud.io/dashboard?id=devsetgo_devsetgo_lib)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_devsetgo_lib&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=devsetgo_devsetgo_lib)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_devsetgo_lib&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=devsetgo_devsetgo_lib)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_bumpcalver&metric=coverage)](https://sonarcloud.io/dashboard?id=devsetgo_bumpcalver)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_bumpcalver&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=devsetgo_bumpcalver)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_bumpcalver&metric=alert_status)](https://sonarcloud.io/dashboard?id=devsetgo_bumpcalver)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_bumpcalver&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=devsetgo_bumpcalver)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_bumpcalver&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=devsetgo_bumpcalver)
 
 
 
@@ -41,17 +41,8 @@ The **BumpCalver CLI** is a command-line interface for calendar-based version bu
   - [Example Configuration](#example-configuration)
 - [Command-Line Usage](#command-line-usage)
   - [Options](#options)
-- [Functions](#functions)
-  - [`get_current_date()`](#get_current_date)
-  - [`get_current_datetime_version()`](#get_current_datetime_version)
-  - [`get_build_version()`](#get_build_version)
-  - [`update_version_in_files()`](#update_version_in_files)
-  - [`load_config()`](#load_config)
-  - [`create_git_tag()`](#create_git_tag)
-  - [`main()`](#main)
 - [Examples](#examples)
-- [Error Handling](#error-handling)
-- [License](#license)
+
 
 ---
 
@@ -140,10 +131,59 @@ Options:
 - `--auto-commit` / `--no-auto-commit`: Forces auto-commit on or off, overriding the configuration.
 
 ---
-## Support
 
-For issues or questions, please contact [support@example.com](mailto:support@example.com) or open an issue on the project's repository.
+## Examples
+
+### Basic Version Bump
+
+To bump the version using the current date and build count:
+
+```bash
+bumpcalver --build
+```
+
+### Beta Versioning
+
+To create a beta version:
+
+```bash
+bumpcalver --build --beta
+```
+
+### Specifying Timezone
+
+To use a specific timezone:
+
+```bash
+bumpcalver --build --timezone Europe/London
+```
+
+### Creating a Git Tag with Auto-Commit
+
+To bump the version, commit changes, and create a Git tag:
+
+```bash
+bumpcalver --build --git-tag --auto-commit
+```
 
 ---
 
-*Note: Replace placeholder texts like support email and repository links with actual information relevant to your project.*
+## Error Handling
+
+- **Unknown Timezone**: If an invalid timezone is specified, the default timezone (`America/New_York`) is used, and a warning is printed.
+
+- **File Not Found**: If a specified file is not found during version update, an error message is printed.
+
+- **Invalid Build Count**: If the existing build count in a file is invalid, it resets to `1`, and a warning is printed.
+
+- **Git Errors**: Errors during Git operations are caught, and an error message is displayed.
+
+- **Malformed Configuration**: If the `pyproject.toml` file is malformed, an error is printed, and the program exits.
+
+---
+
+## Support
+
+For issues or questions, please open an issue on the project's repository.
+
+---
