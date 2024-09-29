@@ -37,13 +37,9 @@ timezone = "UTC"
 git_tag = true
 auto_commit = true
 [[tool.bumpcalver.file]]
-path = "version.py"
+path = "src/bumpcalver/__init__.py"
 file_type = "python"
 variable = "__version__"
-
-[[tool.bumpcalver.file]]
-path = "Dockerfile"
-file_type = "dockerfile"
 
 [[tool.bumpcalver.file]]
 path = "makefile"
