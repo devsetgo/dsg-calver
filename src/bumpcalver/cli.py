@@ -9,9 +9,9 @@ build versions, update version strings in specified files, load configuration fr
 `pyproject.toml` file, and create Git tags.
 
 Functions:
-    get_current_date(timezone=default_timzone): Returns the current date in the specified timezone.
-    get_current_datetime_version(timezone=default_timzone): Returns the current date and time in the specified timezone.
-    get_build_version(file_config, version_format, timezone=default_timzone): Generates a build version based on the current date and build count.
+    get_current_date(timezone=default_timezone): Returns the current date in the specified timezone.
+    get_current_datetime_version(timezone=default_timezone): Returns the current date and time in the specified timezone.
+    get_build_version(file_config, version_format, timezone=default_timezone): Generates a build version based on the current date and build count.
     update_version_in_files(new_version, file_configs): Updates the version string in the specified files.
     load_config(): Loads the configuration from the `pyproject.toml` file.
     create_git_tag(version, files_to_commit, auto_commit): Creates a Git tag with the new version.
@@ -179,7 +179,7 @@ def load_config() -> dict:
             config["version_format"] = bumpcalver_config.get(
                 "version_format", "{current_date}-{build_count:03}"
             )
-            config["timezone"] = bumpcalver_config.get("timezone", default_timzone)
+            config["timezone"] = bumpcalver_config.get("timezone", default_timezone)
             config["file_configs"] = bumpcalver_config.get("file", [])
             config["git_tag"] = bumpcalver_config.get("git_tag", False)
             config["auto_commit"] = bumpcalver_config.get("auto_commit", False)

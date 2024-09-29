@@ -67,7 +67,7 @@ path = "pyproject.toml"
 variable = "version"
 
 [[tool.bumpcalver.file]]
-path = "Makefile"
+path = "makefile"
 pattern = '''APP_VERSION\s*=\s*(\d+-\d+-\d+-\d+)'''
 # Include other tool configurations (e.g., [tool.ruff], [tool.flake8], etc.)
 
