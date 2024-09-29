@@ -182,11 +182,17 @@ def update_version_in_files(new_version: str, file_configs: list[dict]) -> list[
 
         # Construct the regex pattern
         if variable:
-            version_pattern = re.compile(
-                r'(\b{}\s*=\s*["\'])(.*?)(["\'])'.format(re.escape(variable))
-            )
+            if file_path.endswith("pyproject.toml"):
+                version_pattern = re.compile(
+                    r'(\[project\]\s*.*?\b{}\s*=\s*["\'])(.*?)(["\'])'.format(re.escape(variable)),
+                    re.DOTALL
+                )
+            else:
+                version_pattern = re.compile(
+                    r'(\b{}\s*=\s*["\'])(.*?)(["\'])'.format(re.escape(variable))
+                )
         elif pattern:
-            version_pattern = re.compile(pattern)
+            version_pattern = re.compile(pattern, re.DOTALL)
         else:
             print(f"No variable or pattern specified for file {file_path}")
             continue
@@ -225,7 +231,6 @@ def update_version_in_files(new_version: str, file_configs: list[dict]) -> list[
         except Exception as e:
             print(f"Error updating {file_path}: {e}")
     return files_updated
-
 
 def load_config() -> dict:
     """

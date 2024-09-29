@@ -1,6 +1,6 @@
-__version__ = "2024-09-27-007"
+__version__ = "2024-09-28-005"
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from zoneinfo import ZoneInfo, available_timezones
 
 # Prepare a list to store time zone information
@@ -10,7 +10,7 @@ for tz_name in sorted(available_timezones()):
     tz = ZoneInfo(tz_name)
     now = datetime.now(tz)
     offset = tz.utcoffset(now)
-    
+
     if offset is None:
         offset_str = 'Unknown'
     else:
@@ -20,7 +20,7 @@ for tz_name in sorted(available_timezones()):
         hours, remainder = divmod(total_seconds, 3600)
         minutes, _ = divmod(remainder, 60)
         offset_str = f"UTC{sign}{int(hours):02d}:{int(minutes):02d}"
-    
+
     timezones.append((tz_name, offset_str))
 
 # Generate Markdown table

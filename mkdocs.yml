@@ -14,7 +14,8 @@ copyright: 'Copyright &copy; 2016 - 2024 Mike Ryan'
 nav:
     - Introduction: 'index.md'
     - QuickStart: 'quickstart.md'
-    - 
+    - Timezones: 'timezones.md'
+    - Modules: 'models.md'
     - About:
       - About: 'about.md'
       - Contributing: 'contribute.md'
