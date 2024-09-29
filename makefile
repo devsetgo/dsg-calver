@@ -1,6 +1,6 @@
 # Variables
 REPONAME = bumpcalver
-APP_VERSION = 2024-09-27-007
+APP_VERSION = 2024-09-28-007
 PYTHON = python3
 PIP = $(PYTHON) -m pip
 PYTEST = $(PYTHON) -m pytest
@@ -31,7 +31,7 @@ black: ## Reformat Python code to follow the Black code style
 	black $(EXAMPLE_PATH)
 
 bump-ver: ## Bump calver version
-	bumpcalver --build
+	bumpcalver --build 
 
 cleanup: isort ruff autoflake ## Run isort, ruff, autoflake
 
@@ -72,7 +72,7 @@ test: ## Run the project's tests
 	pytest
 	sed -i 's|<source>/workspaces/$(REPONAME)</source>|<source>/github/workspace</source>|' /workspaces/$(REPONAME)/coverage.xml
 	genbadge coverage -i /workspaces/$(REPONAME)/coverage.xml
-	flake8 --tee . > htmlcov/_flake8Report.txt
+	flake8 src tests examples | tee htmlcov/_flake8Report.txt
 
 
 build: ## Build the project
@@ -82,4 +82,3 @@ ruff: ## Format Python code with Ruff
 	ruff check --fix --exit-non-zero-on-fix --show-fixes $(SERVICE_PATH)
 	ruff check --fix --exit-non-zero-on-fix --show-fixes $(TESTS_PATH)
 	ruff check --fix --exit-non-zero-on-fix --show-fixes $(EXAMPLE_PATH)
-

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bumpcalver"
-version = "2024-09-28-2124"
+version = "2024-09-28-007"
 requires-python = ">=3.10"
 description = "A CLI tool for calendar-based version bumping"
 keywords = [
@@ -54,7 +54,6 @@ timezone = "America/New_York"
 git_tag = true
 auto_commit = false
 
-
 [[tool.bumpcalver.file]]
 path = "examples/p.py"
 variable = "__version__"
@@ -68,16 +67,15 @@ path = "pyproject.toml"
 variable = "version"
 
 [[tool.bumpcalver.file]]
-path = "makefile"
-pattern = '''APP_VERSION\s*=\s*(.*)'''
-
-
+path = "Makefile"
+pattern = '''APP_VERSION\s*=\s*(\d+-\d+-\d+-\d+)'''
 # Include other tool configurations (e.g., [tool.ruff], [tool.flake8], etc.)
+
 [tool.ruff]
 line-length = 100
 indent-width = 4
 unsafe-fixes = true
-target-version = "py312"
+target-version = "2024-09-28-001"
 src = ["bumpcalver", "tests"]
 exclude = ["unreleased/*", "scripts/*", "coverage.xml", "coverage-badge.svg"]
 

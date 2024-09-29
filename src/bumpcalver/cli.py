@@ -33,17 +33,17 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import click
 import toml
 
-default_timzone = "America/New_York"
+default_timezone = "America/New_York"
 
-def get_current_date(timezone: str = default_timzone) -> str:
+def get_current_date(timezone: str = default_timezone) -> str:
     """
-    Returns the current date in the specified timezone.
+    Get the current date and time in the specified timezone.
 
     Args:
-        timezone (str): The timezone to use for date calculations. Defaults to "America/New_York".
+        timezone (str): The timezone to use for date and time calculations. Defaults to "America/New_York".
 
     Returns:
-        str: The current date in the format "YYYY-MM-DD".
+        str: The current date and time in the format "YYYY-MM-DD-HHMM".
 
     Raises:
         ZoneInfoNotFoundError: If the specified timezone is not found.
@@ -53,14 +53,13 @@ def get_current_date(timezone: str = default_timzone) -> str:
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
         # If the timezone is not found, use the default timezone
-        print(f"Unknown timezone '{timezone}'. Using default '{default_timzone}'.")
-        tz = ZoneInfo(default_timzone)
+        print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
+        tz = ZoneInfo(default_timezone)
 
-    # Get the current date in the specified timezone
-    return datetime.now(tz).strftime("%Y-%m-%d")
+    # Get the current date and time in the specified timezone
+    return datetime.now(tz).strftime("%Y-%m-%d-%H%M")
 
-
-def get_current_datetime_version(timezone: str = default_timzone) -> str:
+def get_current_datetime_version(timezone: str = default_timezone) -> str:
     """
     Returns the current date and time in the specified timezone.
 
@@ -78,31 +77,14 @@ def get_current_datetime_version(timezone: str = default_timzone) -> str:
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
         # If the timezone is not found, use the default timezone
-        print(f"Unknown timezone '{timezone}'. Using default '{default_timzone}'.")
-        tz = ZoneInfo(default_timzone)
+        print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
+        tz = ZoneInfo(default_timezone)
 
     # Get the current date and time in the specified timezone
     return datetime.now(tz).strftime("%Y-%m-%d-%H%M")
 
 
-def get_build_version(file_config: dict, version_format: str, timezone: str = default_timzone) -> str:
-    """
-    Generates a build version based on the current date and build count.
-
-    Args:
-        file_config (dict): Configuration for the file containing the version string.
-            Expected keys are "path" (str), "variable" (str, optional), and "pattern" (str, optional).
-        version_format (str): The format string for the version. It should contain placeholders
-            for "current_date" and "build_count".
-        timezone (str): The timezone to use for date calculations. Defaults to "America/New_York".
-
-    Returns:
-        str: The generated build version in the specified format.
-
-    Raises:
-        ValueError: If the version format is invalid.
-        KeyError: If required keys are missing in the file configuration.
-    """
+def get_build_version(file_config: dict, version_format: str, timezone: str = default_timezone) -> str:
     current_date = get_current_date(timezone)
     build_count = 1
 
@@ -111,125 +93,60 @@ def get_build_version(file_config: dict, version_format: str, timezone: str = de
     pattern = file_config.get("pattern")
 
     try:
-        # Read the current version from the file
         with open(file_path, "r") as file:
             content = file.read()
-
-            # Construct the regex pattern to find the version
-            if variable:
-                version_pattern = re.compile(
-                    r'\b{}\s*=\s*["\'](?:beta-)?(\d{{4}}-\d{{2}}-\d{{2}})(?:-([^\s"\'/]+))?["\']'.format(
-                        re.escape(variable)
-                    )
-                )
-            elif pattern:
-                version_pattern = re.compile(pattern)
-            else:
-                print(f"No variable or pattern specified for file {file_path}")
-                return version_format.format(
-                    current_date=current_date, build_count=build_count
-                )
-
-            # Search for the version in the file content
-            version_match = version_pattern.search(content)
-            if version_match:
-                # Extract last_date and last_count based on captured groups
-                last_date = version_match.group(1)
-                last_count = version_match.group(2)
-                if last_date == current_date:
-                    try:
-                        last_count = int(last_count or 0)
-                        build_count = last_count + 1
-                    except ValueError:
-                        print(
-                            f"Warning: Invalid build count '{last_count}' in {file_path}. Resetting to 1."
-                        )
-                        build_count = 1
-                else:
-                    build_count = 1
-            else:
-                print(
-                    f"Version in {file_path} does not match expected format. Starting new versioning."
-                )
+            if pattern:
+                match = re.search(pattern, content)
+                if match:
+                    current_version = match.group(1)
+                    if current_version.startswith(current_date):
+                        build_count = int(current_version.split('-')[-1]) + 1
+            elif variable:
+                match = re.search(rf'{variable}\s*=\s*["\'](\d+-\d+-\d+-\d+)["\']', content)
+                if match:
+                    current_version = match.group(1)
+                    if current_version.startswith(current_date):
+                        build_count = int(current_version.split('-')[-1]) + 1
     except FileNotFoundError:
         print(f"{file_path} not found")
 
-    # Return the formatted version string
     return version_format.format(current_date=current_date, build_count=build_count)
 
-
 def update_version_in_files(new_version: str, file_configs: list[dict]) -> list[str]:
-    """
-    Updates the version string in the specified files.
+    def replace_match(match, new_version, file_path):
+        if file_path.endswith("Makefile"):
+            return f'APP_VERSION = {new_version}'
+        else:
+            return f'{match.group(1)}{new_version}{match.group(3)}'
 
-    Args:
-        new_version (str): The new version string to be set in the files.
-        file_configs (list[dict]): A list of file configurations. Each configuration is a dictionary
-            that should contain the key "path" (str) and optionally "variable" (str) or "pattern" (str).
-
-    Returns:
-        list[str]: A list of relative paths of the files that were updated.
-
-    Raises:
-        FileNotFoundError: If a specified file is not found.
-        Exception: If an error occurs while updating a file.
-    """
     files_updated = []
     for file_config in file_configs:
         file_path = file_config["path"]
         variable = file_config.get("variable")
         pattern = file_config.get("pattern")
 
-        # Construct the regex pattern
         if variable:
-            if file_path.endswith("pyproject.toml"):
-                version_pattern = re.compile(
-                    r'(\[project\]\s*.*?\b{}\s*=\s*["\'])(.*?)(["\'])'.format(re.escape(variable)),
-                    re.DOTALL
-                )
-            else:
-                version_pattern = re.compile(
-                    r'(\b{}\s*=\s*["\'])(.*?)(["\'])'.format(re.escape(variable))
-                )
+            regex = rf'({variable}\s*=\s*["\'])(.*?)(["\'])'
         elif pattern:
-            version_pattern = re.compile(pattern, re.DOTALL)
+            regex = pattern
         else:
-            print(f"No variable or pattern specified for file {file_path}")
             continue
 
         try:
-            # Read the content of the file
             with open(file_path, "r") as file:
                 content = file.read()
 
-            # Substitute the new version
-            if variable:
-                def replace_match(match):
-                    return f"{match.group(1)}{new_version}{match.group(3)}"
-                new_content = version_pattern.sub(replace_match, content)
-            elif pattern:
-                # Replace the captured group with new_version
-                def replace_match(match):
-                    old_version = match.group(1)
-                    return match.group(0).replace(old_version, new_version)
-                new_content = version_pattern.sub(replace_match, content)
-            else:
-                new_content = content  # No change
+            new_content = re.sub(regex, lambda match: replace_match(match, new_version, file_path), content)
 
-            # Write the updated content back to the file if changes were made
-            if new_content != content:
-                with open(file_path, "w") as file:
-                    file.write(new_content)
-                print(f"Updated {file_path}")
-                # Store relative paths for git commands
-                relative_path = os.path.relpath(file_path, start=os.getcwd())
-                files_updated.append(relative_path)
-            else:
-                print(f"No changes made to {file_path}")
+            with open(file_path, "w") as file:
+                file.write(new_content)
+
+            files_updated.append(file_path)
         except FileNotFoundError:
             print(f"{file_path} not found")
         except Exception as e:
             print(f"Error updating {file_path}: {e}")
+
     return files_updated
 
 def load_config() -> dict:
@@ -270,7 +187,6 @@ def load_config() -> dict:
             print(f"Error parsing pyproject.toml: {e}")
             raise  # Re-raise the exception
     return config
-
 
 
 def create_git_tag(version: str, files_to_commit: list[str], auto_commit: bool) -> None:
@@ -366,7 +282,7 @@ def main(beta: bool, build: bool, timezone: str, git_tag: bool, auto_commit: boo
     # Extract configuration values with defaults
     version_format = config.get("version_format", "{current_date}-{build_count:03}")
     file_configs = config.get("file_configs", [])
-    config_timezone = config.get("timezone", default_timzone)
+    config_timezone = config.get("timezone", default_timezone)
     config_git_tag = config.get("git_tag", False)
     config_auto_commit = config.get("auto_commit", False)
 
