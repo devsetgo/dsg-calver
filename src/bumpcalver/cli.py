@@ -1,180 +1,317 @@
-# -*- coding: utf-8 -*-
-"""
-bumpcalver.cli
-==============
+# src/bumpcalver/cli.py
 
-This module provides a command-line interface (CLI) for calendar-based version bumping.
-It includes functions to get the current date and time in a specified timezone, generate
-build versions, update version strings in specified files, load configuration from a
-`pyproject.toml` file, and create Git tags.
-
-Functions:
-    get_current_date(timezone=default_timezone): Returns the current date in the specified timezone.
-    get_current_datetime_version(timezone=default_timezone): Returns the current date and time in the specified timezone.
-    get_build_version(file_config, version_format, timezone=default_timezone): Generates a build version based on the current date and build count.
-    update_version_in_files(new_version, file_configs): Updates the version string in the specified files.
-    load_config(): Loads the configuration from the `pyproject.toml` file.
-    create_git_tag(version, files_to_commit, auto_commit): Creates a Git tag with the new version.
-    main(beta, build, timezone, git_tag, auto_commit): CLI entry point for version bumping.
-
-Usage:
-    Run the CLI with the desired options to bump the version in the specified files and optionally create a Git tag.
-
-Example:
-    $ bumpcalver --build --timezone UTC --git-tag --auto-commit
-"""
+import logging
 import os
 import re
 import subprocess
-import sys  # Added to handle exit
+import sys
 from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import click
 import toml
 
+logger = logging.getLogger(__name__)
+
 default_timezone = "America/New_York"
 
-def get_current_date(timezone: str = default_timezone) -> str:
-    """
-    Get the current date and time in the specified timezone.
 
-    Args:
-        timezone (str): The timezone to use for date and time calculations. Defaults to "America/New_York".
-
-    Returns:
-        str: The current date and time in the format "YYYY-MM-DD-HHMM".
-
-    Raises:
-        ZoneInfoNotFoundError: If the specified timezone is not found.
-    """
+def get_current_date(timezone=default_timezone):
     try:
-        # Attempt to get the timezone information
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
-        # If the timezone is not found, use the default timezone
         print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
         tz = ZoneInfo(default_timezone)
+    return datetime.now(tz).strftime("%Y-%m-%d")
 
-    # Get the current date and time in the specified timezone
-    return datetime.now(tz).strftime("%Y-%m-%d-%H%M")
 
-def get_current_datetime_version(timezone: str = default_timezone) -> str:
-    """
-    Returns the current date and time in the specified timezone.
-
-    Args:
-        timezone (str): The timezone to use for date and time calculations. Defaults to "America/New_York".
-
-    Returns:
-        str: The current date and time in the format "YYYY-MM-DD-HHMM".
-
-    Raises:
-        ZoneInfoNotFoundError: If the specified timezone is not found.
-    """
+def get_current_datetime_version(timezone=default_timezone):
     try:
-        # Attempt to get the timezone information
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
-        # If the timezone is not found, use the default timezone
         print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
         tz = ZoneInfo(default_timezone)
-
-    # Get the current date and time in the specified timezone
     return datetime.now(tz).strftime("%Y-%m-%d-%H%M")
 
 
-def get_build_version(file_config: dict, version_format: str, timezone: str = default_timezone) -> str:
-    current_date = get_current_date(timezone)
-    build_count = 1
+def parse_version(version):
+    pattern = re.compile(r"(?:beta-)?(\d{4}-\d{2}-\d{2})(?:-(\d+))?")
+    match = pattern.match(version)
+    if match:
+        last_date = match.group(1)
+        last_count = int(match.group(2) or 0)
+        return last_date, last_count
+    else:
+        print(f"Version '{version}' does not match expected format.")
+        return None, None
 
-    file_path = file_config["path"]
-    variable = file_config.get("variable")
-    pattern = file_config.get("pattern")
 
+def read_version_from_python_file(file_path, variable):
+    version_pattern = re.compile(
+        rf'^\s*{re.escape(variable)}\s*=\s*["\'](.+?)["\']\s*$', re.MULTILINE
+    )
     try:
         with open(file_path, "r") as file:
             content = file.read()
-            if pattern:
-                match = re.search(pattern, content)
-                if match:
-                    current_version = match.group(1)
-                    if current_version.startswith(current_date):
-                        build_count = int(current_version.split('-')[-1]) + 1
-            elif variable:
-                match = re.search(rf'{variable}\s*=\s*["\'](\d+-\d+-\d+-\d+)["\']', content)
-                if match:
-                    current_version = match.group(1)
-                    if current_version.startswith(current_date):
-                        build_count = int(current_version.split('-')[-1]) + 1
-    except FileNotFoundError:
-        print(f"{file_path} not found")
+        match = version_pattern.search(content)
+        if match:
+            return match.group(1)
+        else:
+            return None
+    except Exception as e:
+        print(f"Error reading version from {file_path}: {e}")
+        return None
+
+
+def read_version_from_toml_file(file_path, section, variable):
+    try:
+        with open(file_path, "r") as f:
+            data = toml.load(f)
+        # Navigate to the correct section
+        sections = section.split(".")
+        current_section = data
+        for sec in sections:
+            current_section = current_section.get(sec, {})
+        version = current_section.get(variable)
+        return version
+    except Exception as e:
+        print(f"Error reading version from {file_path}: {e}")
+        return None
+
+
+def read_version_from_makefile(file_path, variable):
+    version_pattern = re.compile(
+        rf"^\s*{re.escape(variable)}\s*[:]?=\s*(.+?)\s*$", re.MULTILINE
+    )
+    try:
+        with open(file_path, "r") as file:
+            content = file.read()
+        match = version_pattern.search(content)
+        if match:
+            return match.group(1)
+        else:
+            return None
+    except Exception as e:
+        print(f"Error reading version from {file_path}: {e}")
+        return None
+
+
+def get_build_version(file_config, version_format, timezone=default_timezone):
+    current_date = get_current_date(timezone)
+    build_count = 1
+    file_path = file_config["path"]
+    file_type = file_config.get("file_type")
+    variable = file_config.get("variable")
+
+    try:
+        if file_type == "python":
+            version = read_version_from_python_file(file_path, variable)
+        elif file_type == "toml":
+            section = file_config.get("section")
+            version = read_version_from_toml_file(file_path, section, variable)
+        elif file_type == "makefile":
+            version = read_version_from_makefile(file_path, variable)
+        # Add more file types as needed
+        else:
+            logger.warning(f"Unsupported file type '{file_type}' for build version.")
+            version = None
+
+        if version:
+            last_date, last_count = parse_version(version)
+            if last_date == current_date:
+                try:
+                    build_count = int(last_count) + 1
+                except ValueError:
+                    logger.warning(
+                        f"Warning: Invalid build count '{last_count}' in {file_path}. Resetting to 1."
+                    )
+                    build_count = 1
+            else:
+                build_count = 1
+        else:
+            logger.warning(
+                f"Could not read version from {file_path}. Starting new versioning."
+            )
+    except Exception as e:
+        logger.error(f"Error reading version from {file_path}: {e}")
+        build_count = 1
 
     return version_format.format(current_date=current_date, build_count=build_count)
 
-def update_version_in_files(new_version: str, file_configs: list[dict]) -> list[str]:
-    def replace_match(match, new_version, file_path):
-        if file_path.endswith("Makefile"):
-            return f'APP_VERSION = {new_version}'
-        else:
-            return f'{match.group(1)}{new_version}{match.group(3)}'
 
+def update_python_file(file_path, variable, new_version):
+    version_pattern = re.compile(
+        rf'^(\s*{re.escape(variable)}\s*=\s*)(["\'])(.+?)(["\'])\s*$', re.MULTILINE
+    )
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            content = file.read()
+
+        def replacement(match):
+            return f"{match.group(1)}{match.group(2)}{new_version}{match.group(4)}"
+
+        new_content, num_subs = version_pattern.subn(replacement, content)
+
+        if num_subs > 0:
+            with open(file_path, "w", encoding="utf-8") as file:
+                file.write(new_content)
+            print(f"Updated {file_path}")
+            return True
+        else:
+            print(f"No version variable '{variable}' found in {file_path}")
+            return False
+    except Exception as e:
+        print(f"Error updating {file_path}: {e}")
+        return False
+
+
+def update_toml_file(file_path, section, variable, new_version):
+    try:
+        with open(file_path, "r") as f:
+            data = toml.load(f)
+
+        # Navigate to the correct section
+        sections = section.split(".")
+        current_section = data
+        for sec in sections:
+            if sec not in current_section:
+                print(f"Section '{section}' not found in {file_path}")
+                return False
+            current_section = current_section[sec]
+
+        if variable in current_section:
+            current_section[variable] = new_version
+        else:
+            print(
+                f"Variable '{variable}' not found in section '{section}' of {file_path}"
+            )
+            return False
+
+        with open(file_path, "w") as f:
+            toml.dump(data, f)
+        print(f"Updated {file_path}")
+        return True
+    except Exception as e:
+        print(f"Error updating {file_path}: {e}")
+        return False
+
+
+def update_makefile(file_path, variable, new_version):
+    version_pattern = re.compile(
+        rf"^(\s*{re.escape(variable)}\s*[:]?=\s*)(.+?)\s*$", re.MULTILINE
+    )
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            content = file.read()
+
+        def replacement(match):
+            return f"{match.group(1)}{new_version}"
+
+        new_content, num_subs = version_pattern.subn(replacement, content)
+
+        if num_subs > 0:
+            with open(file_path, "w", encoding="utf-8") as file:
+                file.write(new_content)
+            print(f"Updated {file_path}")
+            return True
+        else:
+            print(f"No variable '{variable}' found in {file_path}")
+            return False
+    except Exception as e:
+        print(f"Error updating {file_path}: {e}")
+        return False
+
+
+def update_dockerfile(file_path, new_version):
+    version_pattern = re.compile(
+        r'^(LABEL\s+version\s*=\s*["\'])(.+?)(["\'])\s*$', re.MULTILINE
+    )
+    env_pattern = re.compile(r"^(ENV\s+VERSION\s+)(.+?)\s*$", re.MULTILINE)
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            content = file.read()
+
+        new_content = content
+        num_subs = 0
+
+        # Try updating LABEL version
+        def label_replacement(match):
+            return f"{match.group(1)}{new_version}{match.group(3)}"
+
+        new_content, subs = version_pattern.subn(label_replacement, new_content)
+        num_subs += subs
+
+        # Try updating ENV VERSION
+        def env_replacement(match):
+            return f"{match.group(1)}{new_version}"
+
+        new_content, subs = env_pattern.subn(env_replacement, new_content)
+        num_subs += subs
+
+        if num_subs > 0:
+            with open(file_path, "w", encoding="utf-8") as file:
+                file.write(new_content)
+            print(f"Updated {file_path}")
+            return True
+        else:
+            print(f"No version label or ENV found in {file_path}")
+            return False
+    except Exception as e:
+        print(f"Error updating {file_path}: {e}")
+        return False
+
+
+def update_version_in_files(new_version, file_configs):
     files_updated = []
     for file_config in file_configs:
         file_path = file_config["path"]
-        variable = file_config.get("variable")
-        pattern = file_config.get("pattern")
-
-        if variable:
-            regex = rf'({variable}\s*=\s*["\'])(.*?)(["\'])'
-        elif pattern:
-            regex = pattern
-        else:
+        file_type = file_config.get("file_type")
+        if not file_type:
+            print(f"No file_type specified for {file_path}")
             continue
 
-        try:
-            with open(file_path, "r") as file:
-                content = file.read()
+        success = False
 
-            new_content = re.sub(regex, lambda match: replace_match(match, new_version, file_path), content)
+        if file_type == "python":
+            variable = file_config.get("variable")
+            if not variable:
+                print(f"No variable specified for Python file {file_path}")
+                continue
+            success = update_python_file(file_path, variable, new_version)
+        elif file_type == "toml":
+            section = file_config.get("section")
+            variable = file_config.get("variable")
+            if not section or not variable:
+                print(
+                    f"Section and variable must be specified for TOML file {file_path}"
+                )
+                continue
+            success = update_toml_file(file_path, section, variable, new_version)
+        elif file_type == "makefile":
+            variable = file_config.get("variable")
+            if not variable:
+                print(f"No variable specified for Makefile {file_path}")
+                continue
+            success = update_makefile(file_path, variable, new_version)
+        elif file_type == "dockerfile":
+            success = update_dockerfile(file_path, new_version)
+        else:
+            print(f"Unsupported file type '{file_type}' for {file_path}")
+            continue
 
-            with open(file_path, "w") as file:
-                file.write(new_content)
-
-            files_updated.append(file_path)
-        except FileNotFoundError:
-            print(f"{file_path} not found")
-        except Exception as e:
-            print(f"Error updating {file_path}: {e}")
-
+        if success:
+            # Store relative paths for git commands
+            relative_path = os.path.relpath(file_path, start=os.getcwd())
+            files_updated.append(relative_path)
     return files_updated
 
-def load_config() -> dict:
-    """
-    Loads the configuration from the `pyproject.toml` file.
 
-    The configuration is expected to be under the `[tool.bumpcalver]` section in the `pyproject.toml` file.
-    It includes settings for version format, timezone, file configurations, Git tagging, and auto-commit.
-
-    Returns:
-        dict: A dictionary containing the configuration settings. The keys include:
-            - "version_format" (str): The format string for the version.
-            - "timezone" (str): The timezone for date calculations.
-            - "file_configs" (list[dict]): A list of file configurations.
-            - "git_tag" (bool): Whether to create a Git tag with the new version.
-            - "auto_commit" (bool): Whether to automatically commit changes when creating a Git tag.
-
-    Raises:
-        toml.TomlDecodeError: If there is an error parsing the `pyproject.toml` file.
-    """
+def load_config():
     config = {}
     if os.path.exists("pyproject.toml"):
         try:
-            # Open and parse the pyproject.toml file
             with open("pyproject.toml", "r") as f:
                 pyproject = toml.load(f)
-
-            # Extract the bumpcalver configuration
             bumpcalver_config = pyproject.get("tool", {}).get("bumpcalver", {})
             config["version_format"] = bumpcalver_config.get(
                 "version_format", "{current_date}-{build_count:03}"
@@ -185,25 +322,13 @@ def load_config() -> dict:
             config["auto_commit"] = bumpcalver_config.get("auto_commit", False)
         except toml.TomlDecodeError as e:
             print(f"Error parsing pyproject.toml: {e}")
-            raise  # Re-raise the exception
+            sys.exit(1)
+    else:
+        print("pyproject.toml not found. Using default configuration.")
     return config
 
 
-def create_git_tag(version: str, files_to_commit: list[str], auto_commit: bool) -> None:
-    """
-    Creates a Git tag with the new version.
-
-    This function checks if the current directory is a Git repository, optionally commits the updated files,
-    and creates a Git tag with the specified version.
-
-    Args:
-        version (str): The new version string to be used as the Git tag.
-        files_to_commit (list[str]): A list of relative paths of the files to be committed.
-        auto_commit (bool): Whether to automatically commit the updated files before creating the Git tag.
-
-    Raises:
-        subprocess.CalledProcessError: If an error occurs during Git operations.
-    """
+def create_git_tag(version, files_to_commit, auto_commit):
     try:
         # Check if in a Git repository
         subprocess.run(
@@ -251,35 +376,8 @@ def create_git_tag(version: str, files_to_commit: list[str], auto_commit: bool) 
     default=None,
     help="Automatically commit changes when creating a Git tag",
 )
-def main(beta: bool, build: bool, timezone: str, git_tag: bool, auto_commit: bool) -> None:
-    """
-    CLI entry point for version bumping.
-
-    This function handles the command-line options for version bumping, including beta versioning,
-    build count versioning, timezone specification, Git tagging, and auto-commit. It loads the
-    configuration from the `pyproject.toml` file, generates the new version, updates the version
-    in the specified files, and optionally creates a Git tag.
-
-    Args:
-        beta (bool): Use beta versioning if True.
-        build (bool): Use build count versioning if True.
-        timezone (str): The timezone for date calculations. Defaults to the value from the config or "America/New_York".
-        git_tag (bool): Create a Git tag with the new version if True.
-        auto_commit (bool): Automatically commit changes when creating a Git tag if True.
-
-    Raises:
-        toml.TomlDecodeError: If there is an error parsing the `pyproject.toml` file.
-        ValueError: If there is an error generating the version.
-        KeyError: If required keys are missing in the configuration.
-    """
-    try:
-        # Load configuration from pyproject.toml
-        config = load_config()
-    except toml.TomlDecodeError as e:
-        print(f"Error parsing pyproject.toml: {e}")
-        sys.exit(1)
-
-    # Extract configuration values with defaults
+def main(beta, build, timezone, git_tag, auto_commit):
+    config = load_config()
     version_format = config.get("version_format", "{current_date}-{build_count:03}")
     file_configs = config.get("file_configs", [])
     config_timezone = config.get("timezone", default_timezone)
@@ -330,3 +428,7 @@ def main(beta: bool, build: bool, timezone: str, git_tag: bool, auto_commit: boo
     except (ValueError, KeyError) as e:
         print(f"Error generating version: {e}")
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
