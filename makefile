@@ -1,6 +1,6 @@
 # Variables
 REPONAME = bumpcalver
-APP_VERSION = 2024-09-28-007
+APP_VERSION = 2024-09-29-001
 PYTHON = python3
 PIP = $(PYTHON) -m pip
 PYTEST = $(PYTHON) -m pytest
@@ -31,7 +31,7 @@ black: ## Reformat Python code to follow the Black code style
 	black $(EXAMPLE_PATH)
 
 bump-ver: ## Bump calver version
-	bumpcalver --build 
+	bumpcalver --build
 
 cleanup: isort ruff autoflake ## Run isort, ruff, autoflake
 
