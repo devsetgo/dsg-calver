@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bumpcalver"
-version = "2024-09-29-005"
+version = "2024-09-30-001"
 requires-python = ">=3.10"
 description = "A CLI tool for calendar-based version bumping"
 keywords = [ "python", "library", "calendar versioning", "calver", "versioning", "cli",]
@@ -62,23 +62,8 @@ line-length = 100
 indent-width = 4
 unsafe-fixes = true
 target-version = "py312"
-src = ["bumpcalver", "tests"]
-exclude = ["unreleased/*", "scripts/*", "coverage.xml", "coverage-badge.svg"]
-
-[tool.ruff.lint]
-select = ["C", "F", "E", "W", "B"]
-ignore = ["C901", "E501", "B017", "B904", "B008", "I"]
-
-[tool.ruff.format]
-indent-style = "space"
-quote-style = "single"
-
-
-# [tool.flake8]
-# max-line-length = 100
-# max-doc-length = 100
-# ignore = [ "E302", "E501", "E303",]
-# exclude = [ ".git", "__pycache__", "docs", "build", "tests", "_venv", "htmlcov", "scripts", ".pytest_cache", ".vscode", "dist", "*.egg-info",]
+src = [ "bumpcalver", "tests",]
+exclude = [ "unreleased/*", "scripts/*", "coverage.xml", "coverage-badge.svg",]
 
 [tool.isort]
 src_paths = [ "bumpcalver", "tests",]
@@ -92,6 +77,13 @@ line_length = 100
 [tool.hatch.build]
 exclude = [ "*.json", "pkg/_compat.py",]
 
+[tool.ruff.lint]
+select = [ "C", "F", "E", "W", "B",]
+ignore = [ "C901", "E501", "B017", "B904", "B008", "I",]
+
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "single"
 
 [tool.coverage.run]
 source = [ "bumpcalver",]
