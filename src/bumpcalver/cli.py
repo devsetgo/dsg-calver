@@ -3,326 +3,101 @@
 This module provides functions for version management and date handling
 for the bumpcalver library.
 
-Functions:
-    get_current_date: Get the current date in a specified timezone.
-    get_current_datetime_version: Get the current datetime version in a specified timezone.
-    parse_version: Parse a version string.
-    read_version_from_python_file: Read the version from a Python file.
-    read_version_from_toml_file: Read the version from a TOML file.
-    read_version_from_makefile: Read the version from a Makefile.
-    get_build_version: Get the build version based on the configuration and format.
+
 """
 import logging
 import os
-import re
 import subprocess
 import sys
-from datetime import datetime
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from typing import Any, Dict, List, Optional
 
 import click
 import toml
 
+from ._date_functions import default_timezone, get_build_version, get_current_datetime_version
+from ._file_types import (
+    update_dockerfile,
+    update_makefile,
+    update_python_file,
+    update_toml_file,
+)
+
 logger = logging.getLogger(__name__)
 
-default_timezone: str = "America/New_York"
+
+# def parse_version(version: str) -> tuple[str, int]:
+#     """Parse a version string.
+
+#     This function parses a version string that may include a 'beta-' prefix, a date in 'YYYY-MM-DD' format,
+#     and an optional count. It returns the date and the count as a tuple. If the version string does not match
+#     the expected format, it returns (None, None).
+
+#     Args:
+#         version (str): The version string to parse.
+
+#     Returns:
+#         tuple[str, int]: A tuple containing the date as a string and the count as an integer. If the version
+#                          string does not match the expected format, it returns (None, None).
+#     """
+#     # Compile the regex pattern to match the version string
+#     pattern = re.compile(r"(?:beta-)?(\d{4}-\d{2}-\d{2})(?:-(\d+))?")
+
+#     # Match the version string against the pattern
+#     match = pattern.match(version)
+
+#     if match:
+#         # Extract the date and count from the match groups
+#         last_date = match.group(1)
+#         last_count = int(match.group(2) or 0)
+#         return last_date, last_count
+#     else:
+#         # Print a message if the version string does not match the expected format
+#         print(f"Version '{version}' does not match expected format.")
+#         return None, None
 
 
-def get_current_date(timezone: str = default_timezone) -> str:
-    """Get the current date in a specified timezone.
 
-    This function returns the current date formatted as 'YYYY-MM-DD' in the specified timezone.
-    If the specified timezone is not found, it defaults to 'America/New_York'.
+def update_version_in_files(
+    new_version: str, file_configs: List[Dict[str, Any]]
+) -> List[str]:
+    """Update the version in multiple files based on their configurations.
+
+    This function updates the version string in various types of files (Python, TOML, Makefile, Dockerfile)
+    based on the provided configurations. It supports updating version variables in Python files, sections
+    and variables in TOML files, variables in Makefiles, and version labels in Dockerfiles.
 
     Args:
-        timezone (str): The timezone to use. Defaults to 'America/New_York'.
+        new_version (str): The new version string to set.
+        file_configs (List[Dict[str, Any]]): A list of file configuration dictionaries. Each dictionary should contain:
+            - path (str): The path to the file.
+            - file_type (str): The type of the file (e.g., 'python', 'toml', 'makefile', 'dockerfile').
+            - variable (Optional[str]): The variable name to look for (if applicable).
+            - section (Optional[str]): The section in the TOML file (if applicable).
 
     Returns:
-        str: The current date in the specified timezone formatted as 'YYYY-MM-DD'.
+        List[str]: A list of relative paths to the files that were successfully updated.
     """
-    try:
-        # Attempt to get the specified timezone
-        tz = ZoneInfo(timezone)
-    except ZoneInfoNotFoundError:
-        # If the timezone is not found, print a message and use the default timezone
-        print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
-        tz = ZoneInfo(default_timezone)
+    files_updated: List[str] = []  # List to store paths of successfully updated files
 
-    # Get the current date in the specified timezone and format it as 'YYYY-MM-DD'
-    return datetime.now(tz).strftime("%Y-%m-%d")
-
-
-def get_current_datetime_version(timezone: str = default_timezone) -> str:
-    """Get the current datetime version in a specified timezone.
-
-    This function returns the current datetime formatted as 'YYYY-MM-DD-HHMM' in the specified timezone.
-    If the specified timezone is not found, it defaults to 'America/New_York'.
-
-    Args:
-        timezone (str): The timezone to use. Defaults to 'America/New_York'.
-
-    Returns:
-        str: The current datetime in the specified timezone formatted as 'YYYY-MM-DD-HHMM'.
-    """
-    try:
-        # Attempt to get the specified timezone
-        tz = ZoneInfo(timezone)
-    except ZoneInfoNotFoundError:
-        # If the timezone is not found, print a message and use the default timezone
-        print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
-        tz = ZoneInfo(default_timezone)
-
-    # Get the current datetime in the specified timezone and format it as 'YYYY-MM-DD-HHMM'
-    return datetime.now(tz).strftime("%Y-%m-%d-%H%M")
-
-
-def parse_version(version):
-    pattern = re.compile(r"(?:beta-)?(\d{4}-\d{2}-\d{2})(?:-(\d+))?")
-    match = pattern.match(version)
-    if match:
-        last_date = match.group(1)
-        last_count = int(match.group(2) or 0)
-        return last_date, last_count
-    else:
-        print(f"Version '{version}' does not match expected format.")
-        return None, None
-
-
-def read_version_from_python_file(file_path, variable):
-    version_pattern = re.compile(
-        rf'^\s*{re.escape(variable)}\s*=\s*["\'](.+?)["\']\s*$', re.MULTILINE
-    )
-    try:
-        with open(file_path, "r") as file:
-            content = file.read()
-        match = version_pattern.search(content)
-        if match:
-            return match.group(1)
-        else:
-            return None
-    except Exception as e:
-        print(f"Error reading version from {file_path}: {e}")
-        return None
-
-
-def read_version_from_toml_file(file_path, section, variable):
-    try:
-        with open(file_path, "r") as f:
-            data = toml.load(f)
-        # Navigate to the correct section
-        sections = section.split(".")
-        current_section = data
-        for sec in sections:
-            current_section = current_section.get(sec, {})
-        version = current_section.get(variable)
-        return version
-    except Exception as e:
-        print(f"Error reading version from {file_path}: {e}")
-        return None
-
-
-def read_version_from_makefile(file_path, variable):
-    version_pattern = re.compile(
-        rf"^\s*{re.escape(variable)}\s*[:]?=\s*(.+?)\s*$", re.MULTILINE
-    )
-    try:
-        with open(file_path, "r") as file:
-            content = file.read()
-        match = version_pattern.search(content)
-        if match:
-            return match.group(1)
-        else:
-            return None
-    except Exception as e:
-        print(f"Error reading version from {file_path}: {e}")
-        return None
-
-
-def get_build_version(file_config, version_format, timezone=default_timezone):
-    current_date = get_current_date(timezone)
-    build_count = 1
-    file_path = file_config["path"]
-    file_type = file_config.get("file_type")
-    variable = file_config.get("variable")
-
-    try:
-        if file_type == "python":
-            version = read_version_from_python_file(file_path, variable)
-        elif file_type == "toml":
-            section = file_config.get("section")
-            version = read_version_from_toml_file(file_path, section, variable)
-        elif file_type == "makefile":
-            version = read_version_from_makefile(file_path, variable)
-        # Add more file types as needed
-        else:
-            logger.warning(f"Unsupported file type '{file_type}' for build version.")
-            version = None
-
-        if version:
-            last_date, last_count = parse_version(version)
-            if last_date == current_date:
-                try:
-                    build_count = int(last_count) + 1
-                except ValueError:
-                    logger.warning(
-                        f"Warning: Invalid build count '{last_count}' in {file_path}. Resetting to 1."
-                    )
-                    build_count = 1
-            else:
-                build_count = 1
-        else:
-            logger.warning(
-                f"Could not read version from {file_path}. Starting new versioning."
-            )
-    except Exception as e:
-        logger.error(f"Error reading version from {file_path}: {e}")
-        build_count = 1
-
-    return version_format.format(current_date=current_date, build_count=build_count)
-
-
-def update_python_file(file_path, variable, new_version):
-    version_pattern = re.compile(
-        rf'^(\s*{re.escape(variable)}\s*=\s*)(["\'])(.+?)(["\'])\s*$', re.MULTILINE
-    )
-    try:
-        with open(file_path, "r", encoding="utf-8") as file:
-            content = file.read()
-
-        def replacement(match):
-            return f"{match.group(1)}{match.group(2)}{new_version}{match.group(4)}"
-
-        new_content, num_subs = version_pattern.subn(replacement, content)
-
-        if num_subs > 0:
-            with open(file_path, "w", encoding="utf-8") as file:
-                file.write(new_content)
-            print(f"Updated {file_path}")
-            return True
-        else:
-            print(f"No version variable '{variable}' found in {file_path}")
-            return False
-    except Exception as e:
-        print(f"Error updating {file_path}: {e}")
-        return False
-
-
-def update_toml_file(file_path, section, variable, new_version):
-    try:
-        with open(file_path, "r") as f:
-            data = toml.load(f)
-
-        # Navigate to the correct section
-        sections = section.split(".")
-        current_section = data
-        for sec in sections:
-            if sec not in current_section:
-                print(f"Section '{section}' not found in {file_path}")
-                return False
-            current_section = current_section[sec]
-
-        if variable in current_section:
-            current_section[variable] = new_version
-        else:
-            print(
-                f"Variable '{variable}' not found in section '{section}' of {file_path}"
-            )
-            return False
-
-        with open(file_path, "w") as f:
-            toml.dump(data, f)
-        print(f"Updated {file_path}")
-        return True
-    except Exception as e:
-        print(f"Error updating {file_path}: {e}")
-        return False
-
-
-def update_makefile(file_path, variable, new_version):
-    version_pattern = re.compile(
-        rf"^(\s*{re.escape(variable)}\s*[:]?=\s*)(.+?)\s*$", re.MULTILINE
-    )
-    try:
-        with open(file_path, "r", encoding="utf-8") as file:
-            content = file.read()
-
-        def replacement(match):
-            return f"{match.group(1)}{new_version}"
-
-        new_content, num_subs = version_pattern.subn(replacement, content)
-
-        if num_subs > 0:
-            with open(file_path, "w", encoding="utf-8") as file:
-                file.write(new_content)
-            print(f"Updated {file_path}")
-            return True
-        else:
-            print(f"No variable '{variable}' found in {file_path}")
-            return False
-    except Exception as e:
-        print(f"Error updating {file_path}: {e}")
-        return False
-
-
-def update_dockerfile(file_path, new_version):
-    version_pattern = re.compile(
-        r'^(LABEL\s+version\s*=\s*["\'])(.+?)(["\'])\s*$', re.MULTILINE
-    )
-    env_pattern = re.compile(r"^(ENV\s+VERSION\s+)(.+?)\s*$", re.MULTILINE)
-    try:
-        with open(file_path, "r", encoding="utf-8") as file:
-            content = file.read()
-
-        new_content = content
-        num_subs = 0
-
-        # Try updating LABEL version
-        def label_replacement(match):
-            return f"{match.group(1)}{new_version}{match.group(3)}"
-
-        new_content, subs = version_pattern.subn(label_replacement, new_content)
-        num_subs += subs
-
-        # Try updating ENV VERSION
-        def env_replacement(match):
-            return f"{match.group(1)}{new_version}"
-
-        new_content, subs = env_pattern.subn(env_replacement, new_content)
-        num_subs += subs
-
-        if num_subs > 0:
-            with open(file_path, "w", encoding="utf-8") as file:
-                file.write(new_content)
-            print(f"Updated {file_path}")
-            return True
-        else:
-            print(f"No version label or ENV found in {file_path}")
-            return False
-    except Exception as e:
-        print(f"Error updating {file_path}: {e}")
-        return False
-
-
-def update_version_in_files(new_version, file_configs):
-    files_updated = []
     for file_config in file_configs:
-        file_path = file_config["path"]
-        file_type = file_config.get("file_type")
+        file_path: str = file_config["path"]
+        file_type: str = file_config.get("file_type", "")
+
         if not file_type:
             print(f"No file_type specified for {file_path}")
             continue
 
-        success = False
+        success: bool = False  # Flag to track if the update was successful
 
         if file_type == "python":
-            variable = file_config.get("variable")
+            variable: str = file_config.get("variable", "")
             if not variable:
                 print(f"No variable specified for Python file {file_path}")
                 continue
             success = update_python_file(file_path, variable, new_version)
         elif file_type == "toml":
-            section = file_config.get("section")
-            variable = file_config.get("variable")
+            section: str = file_config.get("section", "")
+            variable = file_config.get("variable", "")
             if not section or not variable:
                 print(
                     f"Section and variable must be specified for TOML file {file_path}"
@@ -330,7 +105,7 @@ def update_version_in_files(new_version, file_configs):
                 continue
             success = update_toml_file(file_path, section, variable, new_version)
         elif file_type == "makefile":
-            variable = file_config.get("variable")
+            variable = file_config.get("variable", "")
             if not variable:
                 print(f"No variable specified for Makefile {file_path}")
                 continue
@@ -343,34 +118,67 @@ def update_version_in_files(new_version, file_configs):
 
         if success:
             # Store relative paths for git commands
-            relative_path = os.path.relpath(file_path, start=os.getcwd())
+            relative_path: str = os.path.relpath(file_path, start=os.getcwd())
             files_updated.append(relative_path)
+
     return files_updated
 
 
-def load_config():
-    config = {}
+def load_config() -> Dict[str, Any]:
+    """Load the configuration from pyproject.toml.
+
+    This function loads the configuration for the bumpcalver tool from the pyproject.toml file.
+    If the file is not found, it uses default configuration values. The configuration includes
+    version format, timezone, file configurations, git tagging, and auto-commit settings.
+
+    Returns:
+        Dict[str, Any]: A dictionary containing the configuration settings.
+    """
+    config: Dict[str, Any] = {}  # Initialize an empty configuration dictionary
+
     if os.path.exists("pyproject.toml"):
         try:
-            with open("pyproject.toml", "r") as f:
-                pyproject = toml.load(f)
-            bumpcalver_config = pyproject.get("tool", {}).get("bumpcalver", {})
-            config["version_format"] = bumpcalver_config.get(
+            # Open and read the pyproject.toml file
+            with open("pyproject.toml", "r", encoding="utf-8") as f:
+                pyproject: Dict[str, Any] = toml.load(f)
+
+            # Extract the bumpcalver configuration from the pyproject.toml file
+            bumpcalver_config: Dict[str, Any] = pyproject.get("tool", {}).get("bumpcalver", {})
+
+            # Set the configuration values, using defaults if not specified
+            config["version_format"]: str = bumpcalver_config.get(
                 "version_format", "{current_date}-{build_count:03}"
             )
-            config["timezone"] = bumpcalver_config.get("timezone", default_timezone)
-            config["file_configs"] = bumpcalver_config.get("file", [])
-            config["git_tag"] = bumpcalver_config.get("git_tag", False)
-            config["auto_commit"] = bumpcalver_config.get("auto_commit", False)
+            config["timezone"]: str = bumpcalver_config.get("timezone", default_timezone)
+            config["file_configs"]: list = bumpcalver_config.get("file", [])
+            config["git_tag"]: bool = bumpcalver_config.get("git_tag", False)
+            config["auto_commit"]: bool = bumpcalver_config.get("auto_commit", False)
         except toml.TomlDecodeError as e:
+            # Print an error message and exit if there is a TOML decoding error
             print(f"Error parsing pyproject.toml: {e}")
             sys.exit(1)
     else:
+        # Print a message if the pyproject.toml file is not found and use default configuration
         print("pyproject.toml not found. Using default configuration.")
+
     return config
 
 
-def create_git_tag(version, files_to_commit, auto_commit):
+
+def create_git_tag(version: str, files_to_commit: List[str], auto_commit: bool) -> None:
+    """Create a Git tag for the specified version.
+
+    This function checks if the current directory is inside a Git repository,
+    optionally commits the specified files, and creates a Git tag for the given version.
+
+    Args:
+        version (str): The version string to use for the Git tag.
+        files_to_commit (List[str]): A list of file paths to commit.
+        auto_commit (bool): Whether to automatically commit the specified files.
+
+    Returns:
+        None
+    """
     try:
         # Check if in a Git repository
         subprocess.run(
@@ -380,6 +188,7 @@ def create_git_tag(version, files_to_commit, auto_commit):
             stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
+        # Print a message and return if not in a Git repository
         print("Not a Git repository. Skipping Git tagging.")
         return
 
@@ -388,19 +197,23 @@ def create_git_tag(version, files_to_commit, auto_commit):
             if files_to_commit:
                 # Stage only the updated files
                 subprocess.run(["git", "add"] + files_to_commit, check=True)
-                # Commit changes
-                commit_message = f"Bump version to {version}"
+                # Commit changes with a message
+                commit_message: str = f"Bump version to {version}"
                 subprocess.run(["git", "commit", "-m", commit_message], check=True)
             else:
+                # Print a message if no files were updated
                 print("No files were updated. Skipping Git commit.")
         else:
+            # Print a message if auto-commit is disabled
             print("Auto-commit is disabled. Tagging current commit.")
 
-        # Create Git tag
+        # Create Git tag with the specified version
         subprocess.run(["git", "tag", version], check=True)
         print(f"Created Git tag '{version}'")
     except subprocess.CalledProcessError as e:
+        # Print an error message if a Git operation fails
         print(f"Error during Git operations: {e}")
+
 
 
 @click.command()
@@ -418,13 +231,36 @@ def create_git_tag(version, files_to_commit, auto_commit):
     default=None,
     help="Automatically commit changes when creating a Git tag",
 )
-def main(beta, build, timezone, git_tag, auto_commit):
-    config = load_config()
-    version_format = config.get("version_format", "{current_date}-{build_count:03}")
-    file_configs = config.get("file_configs", [])
-    config_timezone = config.get("timezone", default_timezone)
-    config_git_tag = config.get("git_tag", False)
-    config_auto_commit = config.get("auto_commit", False)
+def main(
+    beta: bool,
+    build: bool,
+    timezone: Optional[str],
+    git_tag: Optional[bool],
+    auto_commit: Optional[bool]
+) -> None:
+    """Main function for the bumpcalver CLI tool.
+
+    This function handles the command-line interface for the bumpcalver tool. It loads the configuration,
+    determines the new version based on the provided options, updates the version in specified files,
+    and optionally creates a Git tag and commits the changes.
+
+    Args:
+        beta (bool): Flag to use beta versioning.
+        build (bool): Flag to use build count versioning.
+        timezone (Optional[str]): Timezone for date calculations.
+        git_tag (Optional[bool]): Flag to create a Git tag with the new version.
+        auto_commit (Optional[bool]): Flag to automatically commit changes when creating a Git tag.
+
+    Returns:
+        None
+    """
+    # Load the configuration from pyproject.toml
+    config: Dict[str, Any] = load_config()
+    version_format: str = config.get("version_format", "{current_date}-{build_count:03}")
+    file_configs: List[Dict[str, Any]] = config.get("file_configs", [])
+    config_timezone: str = config.get("timezone", default_timezone)
+    config_git_tag: bool = config.get("git_tag", False)
+    config_auto_commit: bool = config.get("auto_commit", False)
 
     if not file_configs:
         print("No files specified in the configuration.")
@@ -442,7 +278,7 @@ def main(beta, build, timezone, git_tag, auto_commit):
         auto_commit = config_auto_commit
 
     # Adjust the base directory
-    project_root = os.getcwd()
+    project_root: str = os.getcwd()
     # Update file paths to be absolute
     for file_config in file_configs:
         file_config["path"] = os.path.join(project_root, file_config["path"])
@@ -451,8 +287,8 @@ def main(beta, build, timezone, git_tag, auto_commit):
         # Get the new version
         if build:
             # Use the first file config for getting the build count
-            init_file_config = file_configs[0]
-            new_version = get_build_version(init_file_config, version_format, timezone)
+            init_file_config: Dict[str, Any] = file_configs[0]
+            new_version: str = get_build_version(init_file_config, version_format, timezone)
         else:
             new_version = get_current_datetime_version(timezone)
 
@@ -460,7 +296,7 @@ def main(beta, build, timezone, git_tag, auto_commit):
             new_version = "beta-" + new_version
 
         # Update the version in the specified files
-        files_updated = update_version_in_files(new_version, file_configs)
+        files_updated: List[str] = update_version_in_files(new_version, file_configs)
 
         # Create a Git tag if enabled
         if git_tag:
