@@ -44,8 +44,6 @@ def parse_version(version: str) -> tuple[str, int]:
         return None, None
 
 
-
-
 def get_current_date(timezone: str = default_timezone) -> str:
     """Get the current date in a specified timezone.
 
@@ -92,6 +90,7 @@ def get_current_datetime_version(timezone: str = default_timezone) -> str:
 
     # Get the current datetime in the specified timezone and format it as 'YYYY-MM-DD-HHMM'
     return datetime.now(tz).strftime("%Y-%m-%d-%H%M")
+
 
 def get_build_version(
     file_config: Dict[str, Optional[str]],
@@ -163,4 +162,3 @@ def get_build_version(
 
     # Return the formatted build version
     return version_format.format(current_date=current_date, build_count=build_count)
-

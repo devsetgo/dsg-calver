@@ -15,111 +15,77 @@ import click
 import toml
 
 from ._date_functions import default_timezone, get_build_version, get_current_datetime_version
-from ._file_types import (
-    update_dockerfile,
-    update_makefile,
-    update_python_file,
-    update_toml_file,
+from .file_handlers import (
+    DockerfileVersionHandler,
+    JsonVersionHandler,
+    MakefileVersionHandler,
+    PythonVersionHandler,
+    TomlVersionHandler,
+    VersionHandler,
+    XmlVersionHandler,
+    YamlVersionHandler,
 )
 
 logger = logging.getLogger(__name__)
 
 
-# def parse_version(version: str) -> tuple[str, int]:
-#     """Parse a version string.
+def get_version_handler(file_type: str) -> VersionHandler:
+    if file_type == "python":
+        return PythonVersionHandler()
+    elif file_type == "toml":
+        return TomlVersionHandler()
+    elif file_type == "yaml":
+        return YamlVersionHandler()
+    elif file_type == "json":
+        return JsonVersionHandler()
+    elif file_type == "xml":
+        return XmlVersionHandler()
+    elif file_type == "dockerfile":
+        return DockerfileVersionHandler()
+    elif file_type == "makefile":
+        return MakefileVersionHandler()
+    else:
+        raise ValueError(f"Unsupported file type: {file_type}")
 
-#     This function parses a version string that may include a 'beta-' prefix, a date in 'YYYY-MM-DD' format,
-#     and an optional count. It returns the date and the count as a tuple. If the version string does not match
-#     the expected format, it returns (None, None).
+def parse_dot_path(dot_path: str) -> str:
+    """
+    Converts dot-separated path to a proper file path.
 
-#     Args:
-#         version (str): The version string to parse.
+    Args:
+        dot_path (str): The dot-separated path to the target file.
 
-#     Returns:
-#         tuple[str, int]: A tuple containing the date as a string and the count as an integer. If the version
-#                          string does not match the expected format, it returns (None, None).
-#     """
-#     # Compile the regex pattern to match the version string
-#     pattern = re.compile(r"(?:beta-)?(\d{4}-\d{2}-\d{2})(?:-(\d+))?")
-
-#     # Match the version string against the pattern
-#     match = pattern.match(version)
-
-#     if match:
-#         # Extract the date and count from the match groups
-#         last_date = match.group(1)
-#         last_count = int(match.group(2) or 0)
-#         return last_date, last_count
-#     else:
-#         # Print a message if the version string does not match the expected format
-#         print(f"Version '{version}' does not match expected format.")
-#         return None, None
+    Returns:
+        str: The corresponding file system path.
+    """
+    converted_path = dot_path.replace('.', os.sep)
+    logger.info(f"Converted dot path '{dot_path}' to file system path '{converted_path}'")
+    return converted_path
 
 
-
+# Modify update_version_in_files function in cli.py
 def update_version_in_files(
     new_version: str, file_configs: List[Dict[str, Any]]
 ) -> List[str]:
-    """Update the version in multiple files based on their configurations.
-
-    This function updates the version string in various types of files (Python, TOML, Makefile, Dockerfile)
-    based on the provided configurations. It supports updating version variables in Python files, sections
-    and variables in TOML files, variables in Makefiles, and version labels in Dockerfiles.
-
-    Args:
-        new_version (str): The new version string to set.
-        file_configs (List[Dict[str, Any]]): A list of file configuration dictionaries. Each dictionary should contain:
-            - path (str): The path to the file.
-            - file_type (str): The type of the file (e.g., 'python', 'toml', 'makefile', 'dockerfile').
-            - variable (Optional[str]): The variable name to look for (if applicable).
-            - section (Optional[str]): The section in the TOML file (if applicable).
-
-    Returns:
-        List[str]: A list of relative paths to the files that were successfully updated.
-    """
-    files_updated: List[str] = []  # List to store paths of successfully updated files
+    files_updated: List[str] = []
 
     for file_config in file_configs:
-        file_path: str = file_config["path"]
+        dot_path: str = file_config["path"]
+        file_path: str = parse_dot_path(dot_path)
         file_type: str = file_config.get("file_type", "")
+        variable: str = file_config.get("variable", "")
 
         if not file_type:
             print(f"No file_type specified for {file_path}")
             continue
 
-        success: bool = False  # Flag to track if the update was successful
-
-        if file_type == "python":
-            variable: str = file_config.get("variable", "")
-            if not variable:
-                print(f"No variable specified for Python file {file_path}")
-                continue
-            success = update_python_file(file_path, variable, new_version)
-        elif file_type == "toml":
-            section: str = file_config.get("section", "")
-            variable = file_config.get("variable", "")
-            if not section or not variable:
-                print(
-                    f"Section and variable must be specified for TOML file {file_path}"
-                )
-                continue
-            success = update_toml_file(file_path, section, variable, new_version)
-        elif file_type == "makefile":
-            variable = file_config.get("variable", "")
-            if not variable:
-                print(f"No variable specified for Makefile {file_path}")
-                continue
-            success = update_makefile(file_path, variable, new_version)
-        elif file_type == "dockerfile":
-            success = update_dockerfile(file_path, new_version)
-        else:
-            print(f"Unsupported file type '{file_type}' for {file_path}")
-            continue
-
-        if success:
-            # Store relative paths for git commands
-            relative_path: str = os.path.relpath(file_path, start=os.getcwd())
-            files_updated.append(relative_path)
+        try:
+            handler = get_version_handler(file_type)
+            success = handler.update_version(file_path, variable, new_version)
+            if success:
+                relative_path: str = os.path.relpath(file_path, start=os.getcwd())
+                files_updated.append(relative_path)
+        except ValueError as e:
+            print(e)
 
     return files_updated
 
@@ -143,13 +109,17 @@ def load_config() -> Dict[str, Any]:
                 pyproject: Dict[str, Any] = toml.load(f)
 
             # Extract the bumpcalver configuration from the pyproject.toml file
-            bumpcalver_config: Dict[str, Any] = pyproject.get("tool", {}).get("bumpcalver", {})
+            bumpcalver_config: Dict[str, Any] = pyproject.get("tool", {}).get(
+                "bumpcalver", {}
+            )
 
             # Set the configuration values, using defaults if not specified
             config["version_format"]: str = bumpcalver_config.get(
                 "version_format", "{current_date}-{build_count:03}"
             )
-            config["timezone"]: str = bumpcalver_config.get("timezone", default_timezone)
+            config["timezone"]: str = bumpcalver_config.get(
+                "timezone", default_timezone
+            )
             config["file_configs"]: list = bumpcalver_config.get("file", [])
             config["git_tag"]: bool = bumpcalver_config.get("git_tag", False)
             config["auto_commit"]: bool = bumpcalver_config.get("auto_commit", False)
@@ -162,7 +132,6 @@ def load_config() -> Dict[str, Any]:
         print("pyproject.toml not found. Using default configuration.")
 
     return config
-
 
 
 def create_git_tag(version: str, files_to_commit: List[str], auto_commit: bool) -> None:
@@ -215,9 +184,12 @@ def create_git_tag(version: str, files_to_commit: List[str], auto_commit: bool) 
         print(f"Error during Git operations: {e}")
 
 
+# src/bumpcalver/cli.py
+
 
 @click.command()
 @click.option("--beta", is_flag=True, help="Use beta versioning")
+@click.option("--rc", is_flag=True, help="Use rc versioning")
 @click.option("--build", is_flag=True, help="Use build count versioning")
 @click.option(
     "--timezone",
@@ -233,10 +205,11 @@ def create_git_tag(version: str, files_to_commit: List[str], auto_commit: bool) 
 )
 def main(
     beta: bool,
+    rc: bool,
     build: bool,
     timezone: Optional[str],
     git_tag: Optional[bool],
-    auto_commit: Optional[bool]
+    auto_commit: Optional[bool],
 ) -> None:
     """Main function for the bumpcalver CLI tool.
 
@@ -256,7 +229,9 @@ def main(
     """
     # Load the configuration from pyproject.toml
     config: Dict[str, Any] = load_config()
-    version_format: str = config.get("version_format", "{current_date}-{build_count:03}")
+    version_format: str = config.get(
+        "version_format", "{current_date}-{build_count:03}"
+    )
     file_configs: List[Dict[str, Any]] = config.get("file_configs", [])
     config_timezone: str = config.get("timezone", default_timezone)
     config_git_tag: bool = config.get("git_tag", False)
@@ -288,12 +263,14 @@ def main(
         if build:
             # Use the first file config for getting the build count
             init_file_config: Dict[str, Any] = file_configs[0]
-            new_version: str = get_build_version(init_file_config, version_format, timezone)
+            new_version: str = get_build_version(
+                init_file_config, version_format, timezone
+            )
         else:
             new_version = get_current_datetime_version(timezone)
 
         if beta:
-            new_version = "beta-" + new_version
+            new_version += "-beta"
 
         # Update the version in the specified files
         files_updated: List[str] = update_version_in_files(new_version, file_configs)

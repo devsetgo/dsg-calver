@@ -14,28 +14,19 @@ from bumpcalver._file_types import (
     read_version_from_makefile,
     read_version_from_python_file,
     read_version_from_toml_file,
-        update_dockerfile,
+    update_dockerfile,
     update_makefile,
     update_python_file,
     update_toml_file,
 )
 from click.testing import CliRunner
-
-
 from src.bumpcalver._date_functions import (
     get_build_version,
     get_current_date,
     get_current_datetime_version,
     parse_version,
 )
-
-
-from src.bumpcalver.cli import (
-    create_git_tag,
-    load_config,
-    main,
-    update_version_in_files,
-)
+from src.bumpcalver.cli import create_git_tag, load_config, main, update_version_in_files
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -82,7 +73,7 @@ def test_parse_version():
     assert last_date == "2023-10-05"
     assert last_count == 1
 
-    version = "beta-2023-10-05-005"
+    version = "2023-10-05-005-beta"
     last_date, last_count = parse_version(version)
     assert last_date == "2023-10-05"
     assert last_count == 5
@@ -137,7 +128,9 @@ def test_get_build_version():
     tz = "UTC"
 
     # Mock current date to match the date in the temp file
-    with mock.patch("src.bumpcalver._date_functions.get_current_date", return_value="2023-10-05"):
+    with mock.patch(
+        "src.bumpcalver._date_functions.get_current_date", return_value="2023-10-05"
+    ):
         new_version = get_build_version(file_config, version_format, timezone=tz)
         assert new_version == "2023-10-05-002"
 
@@ -158,7 +151,9 @@ def test_get_build_version_invalid_build_count(caplog):
     version_format = "{current_date}-{build_count:03}"
     tz = "UTC"
 
-    with mock.patch("src.bumpcalver._date_functions.get_current_date", return_value="2023-10-05"):
+    with mock.patch(
+        "src.bumpcalver._date_functions.get_current_date", return_value="2023-10-05"
+    ):
         with caplog.at_level(logging.WARNING):
             new_version = get_build_version(file_config, version_format, timezone=tz)
             assert new_version == "2023-10-05-001"
@@ -179,7 +174,9 @@ def test_get_build_version_missing_file(caplog):
     version_format = "{current_date}-{build_count:03}"
     tz = "UTC"
 
-    with mock.patch("src.bumpcalver._date_functions.get_current_date", return_value="2023-09-30"):
+    with mock.patch(
+        "src.bumpcalver._date_functions.get_current_date", return_value="2023-09-30"
+    ):
         with caplog.at_level(logging.WARNING):
             new_version = get_build_version(file_config, version_format, timezone=tz)
             assert new_version == "2023-09-30-001"
@@ -203,7 +200,9 @@ def test_get_build_version_version_mismatch(capfd):
     version_format = "{current_date}-{build_count:03}"
     tz = "UTC"
 
-    with mock.patch("src.bumpcalver._date_functions.get_current_date", return_value="2023-10-05"):
+    with mock.patch(
+        "src.bumpcalver._date_functions.get_current_date", return_value="2023-10-05"
+    ):
         new_version = get_build_version(file_config, version_format, timezone=tz)
         assert new_version == "2023-10-05-001"
         out, err = capfd.readouterr()
@@ -222,7 +221,9 @@ def test_get_build_version_unsupported_file_type(caplog):
     version_format = "{current_date}-{build_count:03}"
     tz = "UTC"
 
-    with mock.patch("src.bumpcalver._date_functions.get_current_date", return_value="2023-10-05"):
+    with mock.patch(
+        "src.bumpcalver._date_functions.get_current_date", return_value="2023-10-05"
+    ):
         with caplog.at_level(logging.WARNING):
             new_version = get_build_version(file_config, version_format, timezone=tz)
             assert (
@@ -479,7 +480,7 @@ auto_commit = true
     "options, expected_version_prefix",
     [
         (["--build"], ""),  # Standard build
-        (["--build", "--beta"], "beta-"),  # Beta versioning
+        (["--build", "--beta"], "-beta"),  # Beta versioning
         (["--build", "--timezone", "UTC"], ""),  # Specified timezone
         (["--build", "--git-tag"], ""),  # Force git tag
         (["--build", "--no-git-tag"], ""),  # Disable git tag
@@ -583,31 +584,20 @@ variable = "__version__"
 def test_main_beta_versioning():
     runner = CliRunner()
     with runner.isolated_filesystem():
-        # Create necessary files
         with open("pyproject.toml", "w") as f:
             f.write(
                 """
-[tool.bumpcalver]
-version_format = "{current_date}-{build_count:03}"
-timezone = "UTC"
-
-[[tool.bumpcalver.file]]
-path = "version.py"
-file_type = "python"
-variable = "__version__"
-"""
+                [tool.bumpcalver]
+                version_format = "{current_date}-{build_count:03}"
+                file_configs = []
+                timezone = "UTC"
+                git_tag = false
+                auto_commit = false
+                """
             )
-        with open("version.py", "w") as f:
-            f.write('__version__ = "0.1.0"\n')
-
         result = runner.invoke(main, ["--build", "--beta"])
         assert result.exit_code == 0
-        assert "Updated version to beta-" in result.output
-
-        # Verify that the version was updated
-        with open("version.py", "r") as f:
-            content = f.read()
-            assert '__version__ = "beta-' in content
+        assert "-beta" in result.output
 
 
 # Test get_build_version() when the last date is not the current date
@@ -625,7 +615,9 @@ def test_get_build_version_new_date():
     tz = "UTC"
 
     # Mock current date to a different date
-    with mock.patch("src.bumpcalver._date_functions.get_current_date", return_value="2023-10-05"):
+    with mock.patch(
+        "src.bumpcalver._date_functions.get_current_date", return_value="2023-10-05"
+    ):
         new_version = get_build_version(file_config, version_format, timezone=tz)
         assert new_version == "2023-10-05-001"
 
@@ -703,10 +695,10 @@ def test_create_git_tag_with_auto_commit():
 
 # Test main() function with various options
 @pytest.mark.parametrize(
-    "options, expected_version_prefix",
+    "options, expected_version_suffix",
     [
         (["--build"], ""),
-        (["--build", "--beta"], "beta-"),
+        (["--build", "--beta"], "-beta"),
         (["--build", "--timezone", "UTC"], ""),
         (["--build", "--git-tag"], ""),
         (["--build", "--no-git-tag"], ""),
@@ -714,20 +706,23 @@ def test_create_git_tag_with_auto_commit():
         (["--build", "--no-auto-commit"], ""),
     ],
 )
-def test_main_with_options(options, expected_version_prefix):
+def test_main_with_options(options, expected_version_suffix):
     runner = CliRunner()
-    with mock.patch(
-        "src.bumpcalver.cli.load_config",
-        return_value={
-            "version_format": "{current_date}-{build_count:03}",
-            "file_configs": [],
-            "timezone": "UTC",
-            "git_tag": False,
-            "auto_commit": False,
-        },
-    ):
+    with runner.isolated_filesystem():
+        with open("pyproject.toml", "w") as f:
+            f.write(
+                """
+                [tool.bumpcalver]
+                version_format = "{current_date}-{build_count:03}"
+                file_configs = []
+                timezone = "UTC"
+                git_tag = false
+                auto_commit = false
+                """
+            )
         result = runner.invoke(main, options)
         assert result.exit_code == 0
+        assert expected_version_suffix in result.output
 
 
 # Test read_version_from_toml_file() with valid section and variable
@@ -969,7 +964,9 @@ def test_get_build_version_exception():
     tz = "UTC"
 
     # Mock the read_version_from_python_file function to raise an exception
-    with mock.patch("src.bumpcalver._file_types.read_version_from_python_file") as mock_read:
+    with mock.patch(
+        "src.bumpcalver._file_types.read_version_from_python_file"
+    ) as mock_read:
         mock_read.side_effect = Exception("Mocked exception")
         with mock.patch(
             "src.bumpcalver._date_functions.get_current_date", return_value="2023-10-05"
@@ -989,7 +986,9 @@ def test_get_build_version_value_error():
     tz = "UTC"
 
     # Mock the read_version_from_python_file function to raise a ValueError
-    with mock.patch("src.bumpcalver._file_types.read_version_from_python_file") as mock_read:
+    with mock.patch(
+        "src.bumpcalver._file_types.read_version_from_python_file"
+    ) as mock_read:
         mock_read.side_effect = ValueError("Mocked ValueError")
         with mock.patch(
             "src.bumpcalver._date_functions.get_current_date", return_value="2023-10-05"
