@@ -36,19 +36,13 @@ version_format = "{current_date}-{build_count:03}"
 timezone = "America/New_York"
 git_tag = true
 auto_commit = true
-
 [[tool.bumpcalver.file]]
-path = "src.bumpcalver.__init__.py"
+path = "src/bumpcalver/__init__.py"
 file_type = "python"
 variable = "__version__"
 
 [[tool.bumpcalver.file]]
-path = "makefile"
-file_type = "makefile"
-variable = "APP_VERSION"
-
-[[tool.bumpcalver.file]]
-path = "examples.p"
+path = "examples/p.py"
 file_type = "python"
 variable = "__version__"
 
@@ -56,7 +50,6 @@ variable = "__version__"
 path = "pyproject.toml"
 file_type = "toml"
 variable = "project.version"
-
 
 [tool.ruff]
 line-length = 100

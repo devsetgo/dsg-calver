@@ -2,8 +2,6 @@
 """
 This module provides functions for version management and date handling
 for the bumpcalver library.
-
-
 """
 import json
 import logging
@@ -30,7 +28,9 @@ logger = logging.getLogger(__name__)
 default_timezone: str = "America/New_York"
 
 
-def update_version_in_files(new_version: str, file_configs: List[Dict[str, Any]]) -> List[str]:
+def update_version_in_files(
+    new_version: str, file_configs: List[Dict[str, Any]]
+) -> List[str]:
     """
     Update version in the specified files.
 
@@ -63,7 +63,7 @@ def update_version_in_files(new_version: str, file_configs: List[Dict[str, Any]]
 
     return files_updated
 
-# Load the configuration and convert dot-separated paths
+
 def load_config() -> Dict[str, Any]:
     """Load the configuration from pyproject.toml."""
     config: Dict[str, Any] = {}
@@ -75,18 +75,26 @@ def load_config() -> Dict[str, Any]:
                 pyproject: Dict[str, Any] = toml.load(f)
 
             # Extract the bumpcalver configuration from the pyproject.toml file
-            bumpcalver_config: Dict[str, Any] = pyproject.get("tool", {}).get("bumpcalver", {})
+            bumpcalver_config: Dict[str, Any] = pyproject.get("tool", {}).get(
+                "bumpcalver", {}
+            )
 
             # Set the configuration values, using defaults if not specified
-            config["version_format"] = bumpcalver_config.get("version_format", "{current_date}-{build_count:03}")
+            config["version_format"] = bumpcalver_config.get(
+                "version_format", "{current_date}-{build_count:03}"
+            )
             config["timezone"] = bumpcalver_config.get("timezone", default_timezone)
             config["file_configs"] = bumpcalver_config.get("file", [])
             config["git_tag"] = bumpcalver_config.get("git_tag", False)
             config["auto_commit"] = bumpcalver_config.get("auto_commit", False)
 
-            # Convert dot-separated paths to valid file paths
+            # Print paths for debugging
             for file_config in config["file_configs"]:
+                original_path = file_config["path"]
                 file_config["path"] = parse_dot_path(file_config["path"])
+                print(
+                    f"Original path: {original_path} -> Converted path: {file_config['path']}"
+                )  # Debug print
 
         except toml.TomlDecodeError as e:
             print(f"Error parsing pyproject.toml: {e}")
@@ -96,53 +104,36 @@ def load_config() -> Dict[str, Any]:
 
     return config
 
+
 def create_git_tag(version: str, files_to_commit: List[str], auto_commit: bool) -> None:
-    """Create a Git tag for the specified version.
-
-    This function checks if the current directory is inside a Git repository,
-    optionally commits the specified files, and creates a Git tag for the given version.
-
-    Args:
-        version (str): The version string to use for the Git tag.
-        files_to_commit (List[str]): A list of file paths to commit.
-        auto_commit (bool): Whether to automatically commit the specified files.
-
-    Returns:
-        None
-    """
+    """Create a Git tag for the specified version."""
     try:
+        # Check if the Git tag already exists
+        tag_check = subprocess.run(
+            ["git", "tag", "-l", version], capture_output=True, text=True
+        )
+        if version in tag_check.stdout.splitlines():
+            print(f"Tag '{version}' already exists. Skipping tag creation.")
+            return
+
         # Check if in a Git repository
         subprocess.run(
             ["git", "rev-parse", "--is-inside-work-tree"],
             check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
         )
-    except subprocess.CalledProcessError:
-        # Print a message and return if not in a Git repository
-        print("Not a Git repository. Skipping Git tagging.")
-        return
 
-    try:
+        # Auto-commit if enabled
         if auto_commit:
-            if files_to_commit:
-                # Stage only the updated files
-                subprocess.run(["git", "add"] + files_to_commit, check=True)
-                # Commit changes with a message
-                commit_message: str = f"Bump version to {version}"
-                subprocess.run(["git", "commit", "-m", commit_message], check=True)
-            else:
-                # Print a message if no files were updated
-                print("No files were updated. Skipping Git commit.")
-        else:
-            # Print a message if auto-commit is disabled
-            print("Auto-commit is disabled. Tagging current commit.")
+            subprocess.run(["git", "add"] + files_to_commit, check=True)
+            subprocess.run(
+                ["git", "commit", "-m", f"Bump version to {version}"], check=True
+            )
 
-        # Create Git tag with the specified version
+        # Create Git tag
         subprocess.run(["git", "tag", version], check=True)
         print(f"Created Git tag '{version}'")
     except subprocess.CalledProcessError as e:
-        # Print an error message if a Git operation fails
         print(f"Error during Git operations: {e}")
 
 
@@ -162,7 +153,7 @@ class PythonVersionHandler(VersionHandler):
             rf'^\s*{re.escape(variable)}\s*=\s*["\'](.+?)["\']\s*$', re.MULTILINE
         )
         try:
-            with open(file_path, "r") as file:
+            with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
             match = version_pattern.search(content)
             return match.group(1) if match else None
@@ -378,7 +369,7 @@ def get_version_handler(file_type: str) -> VersionHandler:
 
 def parse_dot_path(dot_path: str) -> str:
     """
-    Converts dot-separated path to a proper file path.
+    Converts dot-separated path to a proper file path, if necessary.
 
     Args:
         dot_path (str): The dot-separated path to the target file.
@@ -386,7 +377,20 @@ def parse_dot_path(dot_path: str) -> str:
     Returns:
         str: The corresponding file system path.
     """
-    return dot_path.replace('.', os.sep) + ".py" if dot_path.endswith("__init__") else dot_path.replace('.', os.sep)
+    # If the path is pyproject.toml, return it as-is
+    if dot_path == "pyproject.toml":
+        return dot_path
+
+    # If the path already contains slashes, assume it's a correct file path
+    if "/" in dot_path or "\\" in dot_path:
+        return dot_path
+
+    # Convert dot-separated path to a file path and add '.py' if necessary
+    if "__init__" in dot_path:
+        return dot_path.replace(".", os.sep) + ".py"
+    else:
+        return dot_path.replace(".", os.sep) + ".py"
+
 
 def parse_version(version: str) -> Optional[tuple]:
     """
@@ -441,7 +445,6 @@ def get_current_datetime_version(timezone: str = default_timezone) -> str:
     """
     now = datetime.now()
     return now.strftime("%Y%m%d")
-
 
 
 def get_build_version(
