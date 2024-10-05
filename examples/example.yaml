@@ -1,6 +1,9 @@
 application:
   description: This is an example application configuration file.
   name: ExampleApp
+configuration:
+  version: 2024-10-04-022
+configuration.version: 2024-10-04-023
 database:
   host: localhost
   password: password
@@ -10,4 +13,3 @@ features:
   feature_a: true
   feature_b: false
   feature_c: true
-version: 2024-10-04-022
