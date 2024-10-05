@@ -75,14 +75,10 @@ def load_config() -> Dict[str, Any]:
                 pyproject: Dict[str, Any] = toml.load(f)
 
             # Extract the bumpcalver configuration from the pyproject.toml file
-            bumpcalver_config: Dict[str, Any] = pyproject.get("tool", {}).get(
-                "bumpcalver", {}
-            )
+            bumpcalver_config: Dict[str, Any] = pyproject.get("tool", {}).get("bumpcalver", {})
 
             # Set the configuration values, using defaults if not specified
-            config["version_format"] = bumpcalver_config.get(
-                "version_format", "{current_date}-{build_count:03}"
-            )
+            config["version_format"] = bumpcalver_config.get("version_format", "{current_date}-{build_count:03}")
             config["timezone"] = bumpcalver_config.get("timezone", default_timezone)
             config["file_configs"] = bumpcalver_config.get("file", [])
             config["git_tag"] = bumpcalver_config.get("git_tag", False)
@@ -92,9 +88,7 @@ def load_config() -> Dict[str, Any]:
             for file_config in config["file_configs"]:
                 original_path = file_config["path"]
                 file_config["path"] = parse_dot_path(file_config["path"])
-                print(
-                    f"Original path: {original_path} -> Converted path: {file_config['path']}"
-                )  # Debug print
+                print(f"Original path: {original_path} -> Converted path: {file_config['path']}")  # Debug print
 
         except toml.TomlDecodeError as e:
             print(f"Error parsing pyproject.toml: {e}")
@@ -169,7 +163,7 @@ class PythonVersionHandler(VersionHandler):
             with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
             new_content, num_subs = version_pattern.subn(
-                rf"\1\2{new_version}\4", content
+                rf'\1"\3{new_version}\4"', content
             )
             if num_subs > 0:
                 with open(file_path, "w", encoding="utf-8") as file:
@@ -184,21 +178,29 @@ class PythonVersionHandler(VersionHandler):
 class TomlVersionHandler(VersionHandler):
     def read_version(self, file_path: str, variable: str) -> Optional[str]:
         try:
-            with open(file_path, "r") as f:
-                data = toml.load(f)
-            return data.get(variable)
+            with open(file_path, "r", encoding="utf-8") as file:
+                toml_content = toml.load(file)
+                if variable in toml_content.get("project", {}):
+                    return toml_content["project"][variable]
+            return None
         except Exception as e:
             print(f"Error reading version from {file_path}: {e}")
             return None
 
     def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                data = toml.load(f)
-            data[variable] = new_version
-            with open(file_path, "w", encoding="utf-8") as f:
-                toml.dump(data, f)
-            return True
+            with open(file_path, "r", encoding="utf-8") as file:
+                toml_content = toml.load(file)
+
+            # Update the version in the project section
+            if "project" in toml_content and variable in toml_content["project"]:
+                toml_content["project"][variable] = new_version
+
+                with open(file_path, "w", encoding="utf-8") as file:
+                    toml.dump(toml_content, file)
+
+                return True
+            return False
         except Exception as e:
             print(f"Error updating {file_path}: {e}")
             return False
