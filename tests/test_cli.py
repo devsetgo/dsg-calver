@@ -26,12 +26,7 @@ from src.bumpcalver._date_functions import (
     get_current_datetime_version,
     parse_version,
 )
-from src.bumpcalver.cli import (
-    create_git_tag,
-    load_config,
-    main,
-    update_version_in_files,
-)
+from src.bumpcalver.cli import create_git_tag, load_config, main, update_version_in_files
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
