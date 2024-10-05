@@ -30,15 +30,21 @@ logger = logging.getLogger(__name__)
 default_timezone: str = "America/New_York"
 
 
-# Modify update_version_in_files function in cli.py
-def update_version_in_files(
-    new_version: str, file_configs: List[Dict[str, Any]]
-) -> List[str]:
+def update_version_in_files(new_version: str, file_configs: List[Dict[str, Any]]) -> List[str]:
+    """
+    Update version in the specified files.
+
+    Args:
+        new_version (str): The new version to set.
+        file_configs (List[Dict[str, Any]]): List of file configurations.
+
+    Returns:
+        List[str]: List of updated files.
+    """
     files_updated: List[str] = []
 
     for file_config in file_configs:
-        dot_path: str = file_config["path"]
-        file_path: str = parse_dot_path(dot_path)
+        file_path: str = file_config["path"]  # Already parsed in load_config
         file_type: str = file_config.get("file_type", "")
         variable: str = file_config.get("variable", "")
 
@@ -56,7 +62,6 @@ def update_version_in_files(
             print(e)
 
     return files_updated
-
 
 # Load the configuration and convert dot-separated paths
 def load_config() -> Dict[str, Any]:
