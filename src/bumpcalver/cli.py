@@ -5,61 +5,29 @@ for the bumpcalver library.
 
 
 """
+import json
 import logging
 import os
+import re
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
+from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any, Dict, List, Optional
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import click
 import toml
+import yaml
 
-from ._date_functions import default_timezone, get_build_version, get_current_datetime_version
-from .file_handlers import (
-    DockerfileVersionHandler,
-    JsonVersionHandler,
-    MakefileVersionHandler,
-    PythonVersionHandler,
-    TomlVersionHandler,
-    VersionHandler,
-    XmlVersionHandler,
-    YamlVersionHandler,
-)
+# from ._date_functions import default_timezone, get_build_version, get_current_datetime_version
+# from .path_parser import get_version_handler, parse_dot_path
 
 logger = logging.getLogger(__name__)
 
 
-def get_version_handler(file_type: str) -> VersionHandler:
-    if file_type == "python":
-        return PythonVersionHandler()
-    elif file_type == "toml":
-        return TomlVersionHandler()
-    elif file_type == "yaml":
-        return YamlVersionHandler()
-    elif file_type == "json":
-        return JsonVersionHandler()
-    elif file_type == "xml":
-        return XmlVersionHandler()
-    elif file_type == "dockerfile":
-        return DockerfileVersionHandler()
-    elif file_type == "makefile":
-        return MakefileVersionHandler()
-    else:
-        raise ValueError(f"Unsupported file type: {file_type}")
-
-def parse_dot_path(dot_path: str) -> str:
-    """
-    Converts dot-separated path to a proper file path.
-
-    Args:
-        dot_path (str): The dot-separated path to the target file.
-
-    Returns:
-        str: The corresponding file system path.
-    """
-    converted_path = dot_path.replace('.', os.sep)
-    logger.info(f"Converted dot path '{dot_path}' to file system path '{converted_path}'")
-    return converted_path
+default_timezone: str = "America/New_York"
 
 
 # Modify update_version_in_files function in cli.py
@@ -90,17 +58,10 @@ def update_version_in_files(
     return files_updated
 
 
+# Load the configuration and convert dot-separated paths
 def load_config() -> Dict[str, Any]:
-    """Load the configuration from pyproject.toml.
-
-    This function loads the configuration for the bumpcalver tool from the pyproject.toml file.
-    If the file is not found, it uses default configuration values. The configuration includes
-    version format, timezone, file configurations, git tagging, and auto-commit settings.
-
-    Returns:
-        Dict[str, Any]: A dictionary containing the configuration settings.
-    """
-    config: Dict[str, Any] = {}  # Initialize an empty configuration dictionary
+    """Load the configuration from pyproject.toml."""
+    config: Dict[str, Any] = {}
 
     if os.path.exists("pyproject.toml"):
         try:
@@ -109,30 +70,26 @@ def load_config() -> Dict[str, Any]:
                 pyproject: Dict[str, Any] = toml.load(f)
 
             # Extract the bumpcalver configuration from the pyproject.toml file
-            bumpcalver_config: Dict[str, Any] = pyproject.get("tool", {}).get(
-                "bumpcalver", {}
-            )
+            bumpcalver_config: Dict[str, Any] = pyproject.get("tool", {}).get("bumpcalver", {})
 
             # Set the configuration values, using defaults if not specified
-            config["version_format"]: str = bumpcalver_config.get(
-                "version_format", "{current_date}-{build_count:03}"
-            )
-            config["timezone"]: str = bumpcalver_config.get(
-                "timezone", default_timezone
-            )
-            config["file_configs"]: list = bumpcalver_config.get("file", [])
-            config["git_tag"]: bool = bumpcalver_config.get("git_tag", False)
-            config["auto_commit"]: bool = bumpcalver_config.get("auto_commit", False)
+            config["version_format"] = bumpcalver_config.get("version_format", "{current_date}-{build_count:03}")
+            config["timezone"] = bumpcalver_config.get("timezone", default_timezone)
+            config["file_configs"] = bumpcalver_config.get("file", [])
+            config["git_tag"] = bumpcalver_config.get("git_tag", False)
+            config["auto_commit"] = bumpcalver_config.get("auto_commit", False)
+
+            # Convert dot-separated paths to valid file paths
+            for file_config in config["file_configs"]:
+                file_config["path"] = parse_dot_path(file_config["path"])
+
         except toml.TomlDecodeError as e:
-            # Print an error message and exit if there is a TOML decoding error
             print(f"Error parsing pyproject.toml: {e}")
             sys.exit(1)
     else:
-        # Print a message if the pyproject.toml file is not found and use default configuration
         print("pyproject.toml not found. Using default configuration.")
 
     return config
-
 
 def create_git_tag(version: str, files_to_commit: List[str], auto_commit: bool) -> None:
     """Create a Git tag for the specified version.
@@ -184,7 +141,349 @@ def create_git_tag(version: str, files_to_commit: List[str], auto_commit: bool) 
         print(f"Error during Git operations: {e}")
 
 
-# src/bumpcalver/cli.py
+class VersionHandler(ABC):
+    @abstractmethod
+    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+        pass
+
+    @abstractmethod
+    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+        pass
+
+
+class PythonVersionHandler(VersionHandler):
+    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+        version_pattern = re.compile(
+            rf'^\s*{re.escape(variable)}\s*=\s*["\'](.+?)["\']\s*$', re.MULTILINE
+        )
+        try:
+            with open(file_path, "r") as file:
+                content = file.read()
+            match = version_pattern.search(content)
+            return match.group(1) if match else None
+        except Exception as e:
+            print(f"Error reading version from {file_path}: {e}")
+            return None
+
+    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+        version_pattern = re.compile(
+            rf'^(\s*{re.escape(variable)}\s*=\s*)(["\'])(.+?)(["\'])\s*$', re.MULTILINE
+        )
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                content = file.read()
+            new_content, num_subs = version_pattern.subn(
+                rf"\1\2{new_version}\4", content
+            )
+            if num_subs > 0:
+                with open(file_path, "w", encoding="utf-8") as file:
+                    file.write(new_content)
+                return True
+            return False
+        except Exception as e:
+            print(f"Error updating {file_path}: {e}")
+            return False
+
+
+class TomlVersionHandler(VersionHandler):
+    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+        try:
+            with open(file_path, "r") as f:
+                data = toml.load(f)
+            return data.get(variable)
+        except Exception as e:
+            print(f"Error reading version from {file_path}: {e}")
+            return None
+
+    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = toml.load(f)
+            data[variable] = new_version
+            with open(file_path, "w", encoding="utf-8") as f:
+                toml.dump(data, f)
+            return True
+        except Exception as e:
+            print(f"Error updating {file_path}: {e}")
+            return False
+
+
+class YamlVersionHandler(VersionHandler):
+    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+        try:
+            with open(file_path, "r") as f:
+                data = yaml.safe_load(f)
+            return data.get(variable)
+        except Exception as e:
+            print(f"Error reading version from {file_path}: {e}")
+            return None
+
+    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+            data[variable] = new_version
+            with open(file_path, "w", encoding="utf-8") as f:
+                yaml.safe_dump(data, f)
+            return True
+        except Exception as e:
+            print(f"Error updating {file_path}: {e}")
+            return False
+
+
+class JsonVersionHandler(VersionHandler):
+    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+        try:
+            with open(file_path, "r") as f:
+                data = json.load(f)
+            return data.get(variable)
+        except Exception as e:
+            print(f"Error reading version from {file_path}: {e}")
+            return None
+
+    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            data[variable] = new_version
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            return True
+        except Exception as e:
+            print(f"Error updating {file_path}: {e}")
+            return False
+
+
+class XmlVersionHandler(VersionHandler):
+    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+        try:
+            tree = ET.parse(file_path)
+            root = tree.getroot()
+            element = root.find(variable)
+            return element.text if element is not None else None
+        except Exception as e:
+            print(f"Error reading version from {file_path}: {e}")
+            return None
+
+    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+        try:
+            tree = ET.parse(file_path)
+            root = tree.getroot()
+            element = root.find(variable)
+            if element is not None:
+                element.text = new_version
+                tree.write(file_path)
+                return True
+            return False
+        except Exception as e:
+            print(f"Error updating {file_path}: {e}")
+            return False
+
+
+class DockerfileVersionHandler(VersionHandler):
+    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+        version_pattern = re.compile(
+            rf"^\s*ARG\s+{re.escape(variable)}\s*=\s*(.+?)\s*$", re.MULTILINE
+        )
+        try:
+            with open(file_path, "r") as file:
+                content = file.read()
+            match = version_pattern.search(content)
+            return match.group(1) if match else None
+        except Exception as e:
+            print(f"Error reading version from {file_path}: {e}")
+            return None
+
+    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+        version_pattern = re.compile(
+            rf"^\s*(ARG\s+{re.escape(variable)}\s*=\s*)(.+?)\s*$", re.MULTILINE
+        )
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                content = file.read()
+            new_content, num_subs = version_pattern.subn(rf"\1{new_version}", content)
+            if num_subs > 0:
+                with open(file_path, "w", encoding="utf-8") as file:
+                    file.write(new_content)
+                return True
+            return False
+        except Exception as e:
+            print(f"Error updating {file_path}: {e}")
+            return False
+
+
+class MakefileVersionHandler(VersionHandler):
+    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+        version_pattern = re.compile(
+            rf"^\s*{re.escape(variable)}\s*[:]?=\s*(.+?)\s*$", re.MULTILINE
+        )
+        try:
+            with open(file_path, "r") as file:
+                content = file.read()
+            match = version_pattern.search(content)
+            return match.group(1) if match else None
+        except Exception as e:
+            print(f"Error reading version from {file_path}: {e}")
+            return None
+
+    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+        version_pattern = re.compile(
+            rf"^\s*({re.escape(variable)}\s*[:]?=\s*)(.+?)\s*$", re.MULTILINE
+        )
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                content = file.read()
+            new_content, num_subs = version_pattern.subn(rf"\1{new_version}", content)
+            if num_subs > 0:
+                with open(file_path, "w", encoding="utf-8") as file:
+                    file.write(new_content)
+                return True
+            return False
+        except Exception as e:
+            print(f"Error updating {file_path}: {e}")
+            return False
+
+
+def get_version_handler(file_type: str) -> VersionHandler:
+    if file_type == "python":
+        logger.info("Python file type detected")
+        return PythonVersionHandler()
+    elif file_type == "toml":
+        logger.info("TOML file type detected")
+        return TomlVersionHandler()
+    elif file_type == "yaml":
+        logger.info("YAML file type detected")
+        return YamlVersionHandler()
+    elif file_type == "json":
+        logger.info("JSON file type detected")
+        return JsonVersionHandler()
+    elif file_type == "xml":
+        logger.info("XML file type detected")
+        return XmlVersionHandler()
+    elif file_type == "dockerfile":
+        logger.info("Dockerfile file type detected")
+        return DockerfileVersionHandler()
+    elif file_type == "makefile":
+        logger.info("Makefile file type detected")
+        return MakefileVersionHandler()
+    else:
+        logger.error(f"Unsupported file type: {file_type}")
+        raise ValueError(f"Unsupported file type: {file_type}")
+
+
+def parse_dot_path(dot_path: str) -> str:
+    """
+    Converts dot-separated path to a proper file path.
+
+    Args:
+        dot_path (str): The dot-separated path to the target file.
+
+    Returns:
+        str: The corresponding file system path.
+    """
+    return dot_path.replace('.', os.sep) + ".py" if dot_path.endswith("__init__") else dot_path.replace('.', os.sep)
+
+def parse_version(version: str) -> Optional[tuple]:
+    """
+    Parses the version to extract the date and count.
+
+    Args:
+        version (str): The version string.
+
+    Returns:
+        Optional[tuple]: A tuple of (date, count) if successful, otherwise None.
+    """
+    try:
+        date_str, count_str = version.split("-")
+        return date_str, int(count_str)
+    except ValueError:
+        return None
+
+
+def get_current_date(timezone: str = default_timezone) -> str:
+    """Get the current date in a specified timezone.
+
+    This function returns the current date formatted as 'YYYY-MM-DD' in the specified timezone.
+    If the specified timezone is not found, it defaults to 'America/New_York'.
+
+    Args:
+        timezone (str): The timezone to use. Defaults to 'America/New_York'.
+
+    Returns:
+        str: The current date in the specified timezone formatted as 'YYYY-MM-DD'.
+    """
+    try:
+        # Attempt to get the specified timezone
+        tz = ZoneInfo(timezone)
+    except ZoneInfoNotFoundError:
+        # If the timezone is not found, print a message and use the default timezone
+        print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
+        tz = ZoneInfo(default_timezone)
+
+    # Get the current date in the specified timezone and format it as 'YYYY-MM-DD'
+    return datetime.now(tz).strftime("%Y-%m-%d")
+
+
+def get_current_datetime_version(timezone: str = default_timezone) -> str:
+    """
+    Get the current date as a version string.
+
+    Args:
+        timezone (str): The timezone to use for generating the version.
+
+    Returns:
+        str: A version string based on the current date.
+    """
+    now = datetime.now()
+    return now.strftime("%Y%m%d")
+
+
+
+def get_build_version(
+    file_config: Dict[str, Any], version_format: str, timezone: str
+) -> str:
+    """
+    Generates the build version based on the current date and the build count.
+
+    Args:
+        file_config (Dict[str, Any]): The configuration of the file containing the current version.
+        version_format (str): The format to use for the new version.
+        timezone (str): The timezone to use for generating the version.
+
+    Returns:
+        str: The generated build version.
+    """
+    # Convert dot-separated path to actual file path if necessary
+    file_path = file_config["path"]
+    file_type = file_config.get("file_type", "")
+    variable = file_config.get("variable", "")
+
+    # Get the current date for versioning
+    current_date = get_current_datetime_version(timezone)
+    build_count = 1  # Default build count
+
+    try:
+        # Use the appropriate handler for reading the version
+        handler = get_version_handler(file_type)
+        version = handler.read_version(file_path, variable)
+
+        if version:
+            # Parse the version to get the last date and count
+            parsed_version = parse_version(version)
+            if parsed_version:
+                last_date, last_count = parsed_version
+                if last_date == current_date:
+                    build_count = last_count + 1
+        else:
+            logger.warning(
+                f"Could not read version from {file_path}. Starting new versioning."
+            )
+    except Exception as e:
+        logger.error(f"Error reading version from {file_path}: {e}")
+        build_count = 1
+
+    # Return the formatted build version
+    return version_format.format(current_date=current_date, build_count=build_count)
 
 
 @click.command()

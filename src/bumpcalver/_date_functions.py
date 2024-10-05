@@ -1,164 +1,113 @@
-import logging
-import re
-from datetime import datetime
-from typing import Dict, Optional
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+# import logging
+# from datetime import datetime
+# from typing import Dict, Optional
+# from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from bumpcalver._file_types import (
-    read_version_from_makefile,
-    read_version_from_python_file,
-    read_version_from_toml_file,
-)
+# from .cli import get_version_handler
 
-default_timezone: str = "America/New_York"
+# default_timezone: str = "America/New_York"
 
 
-def parse_version(version: str) -> tuple[str, int]:
-    """Parse a version string.
+# def parse_version(version: str) -> Optional[tuple]:
+#     """
+#     Parses the version to extract the date and count.
 
-    This function parses a version string that may include a 'beta-' prefix, a date in 'YYYY-MM-DD' format,
-    and an optional count. It returns the date and the count as a tuple. If the version string does not match
-    the expected format, it returns (None, None).
+#     Args:
+#         version (str): The version string.
 
-    Args:
-        version (str): The version string to parse.
-
-    Returns:
-        tuple[str, int]: A tuple containing the date as a string and the count as an integer. If the version
-                         string does not match the expected format, it returns (None, None).
-    """
-    # Compile the regex pattern to match the version string
-    pattern = re.compile(r"(?:beta-)?(\d{4}-\d{2}-\d{2})(?:-(\d+))?")
-
-    # Match the version string against the pattern
-    match = pattern.match(version)
-
-    if match:
-        # Extract the date and count from the match groups
-        last_date = match.group(1)
-        last_count = int(match.group(2) or 0)
-        return last_date, last_count
-    else:
-        # Print a message if the version string does not match the expected format
-        print(f"Version '{version}' does not match expected format.")
-        return None, None
+#     Returns:
+#         Optional[tuple]: A tuple of (date, count) if successful, otherwise None.
+#     """
+#     try:
+#         date_str, count_str = version.split("-")
+#         return date_str, int(count_str)
+#     except ValueError:
+#         return None
 
 
-def get_current_date(timezone: str = default_timezone) -> str:
-    """Get the current date in a specified timezone.
+# def get_current_date(timezone: str = default_timezone) -> str:
+#     """Get the current date in a specified timezone.
 
-    This function returns the current date formatted as 'YYYY-MM-DD' in the specified timezone.
-    If the specified timezone is not found, it defaults to 'America/New_York'.
+#     This function returns the current date formatted as 'YYYY-MM-DD' in the specified timezone.
+#     If the specified timezone is not found, it defaults to 'America/New_York'.
 
-    Args:
-        timezone (str): The timezone to use. Defaults to 'America/New_York'.
+#     Args:
+#         timezone (str): The timezone to use. Defaults to 'America/New_York'.
 
-    Returns:
-        str: The current date in the specified timezone formatted as 'YYYY-MM-DD'.
-    """
-    try:
-        # Attempt to get the specified timezone
-        tz = ZoneInfo(timezone)
-    except ZoneInfoNotFoundError:
-        # If the timezone is not found, print a message and use the default timezone
-        print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
-        tz = ZoneInfo(default_timezone)
+#     Returns:
+#         str: The current date in the specified timezone formatted as 'YYYY-MM-DD'.
+#     """
+#     try:
+#         # Attempt to get the specified timezone
+#         tz = ZoneInfo(timezone)
+#     except ZoneInfoNotFoundError:
+#         # If the timezone is not found, print a message and use the default timezone
+#         print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
+#         tz = ZoneInfo(default_timezone)
 
-    # Get the current date in the specified timezone and format it as 'YYYY-MM-DD'
-    return datetime.now(tz).strftime("%Y-%m-%d")
-
-
-def get_current_datetime_version(timezone: str = default_timezone) -> str:
-    """Get the current datetime version in a specified timezone.
-
-    This function returns the current datetime formatted as 'YYYY-MM-DD-HHMM' in the specified timezone.
-    If the specified timezone is not found, it defaults to 'America/New_York'.
-
-    Args:
-        timezone (str): The timezone to use. Defaults to 'America/New_York'.
-
-    Returns:
-        str: The current datetime in the specified timezone formatted as 'YYYY-MM-DD-HHMM'.
-    """
-    try:
-        # Attempt to get the specified timezone
-        tz = ZoneInfo(timezone)
-    except ZoneInfoNotFoundError:
-        # If the timezone is not found, print a message and use the default timezone
-        print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
-        tz = ZoneInfo(default_timezone)
-
-    # Get the current datetime in the specified timezone and format it as 'YYYY-MM-DD-HHMM'
-    return datetime.now(tz).strftime("%Y-%m-%d-%H%M")
+#     # Get the current date in the specified timezone and format it as 'YYYY-MM-DD'
+#     return datetime.now(tz).strftime("%Y-%m-%d")
 
 
-def get_build_version(
-    file_config: Dict[str, Optional[str]],
-    version_format: str,
-    timezone: str = default_timezone,
-) -> str:
-    """Get the build version based on the configuration and format.
+# def get_current_datetime_version(timezone: str = default_timezone) -> str:
+#     """
+#     Get the current date as a version string.
 
-    This function reads the version from a specified file, determines the build count
-    for the current date, and returns the build version formatted according to the
-    provided version format.
+#     Args:
+#         timezone (str): The timezone to use for generating the version.
 
-    Args:
-        file_config (Dict[str, Optional[str]]): The file configuration containing:
-            - path (str): The path to the file.
-            - file_type (Optional[str]): The type of the file (e.g., 'python', 'toml', 'makefile').
-            - variable (Optional[str]): The variable name to look for in the file.
-            - section (Optional[str]): The section in the TOML file (if applicable).
-        version_format (str): The format string for the version.
-        timezone (str): The timezone to use for the current date. Defaults to 'America/New_York'.
+#     Returns:
+#         str: A version string based on the current date.
+#     """
+#     now = datetime.now()
+#     return now.strftime("%Y%m%d")
 
-    Returns:
-        str: The formatted build version.
-    """
-    # Get the current date in the specified timezone
-    current_date: str = get_current_date(timezone)
-    build_count: int = 1  # Initialize build count to 1
-    file_path: str = file_config["path"]
-    file_type: Optional[str] = file_config.get("file_type")
-    variable: Optional[str] = file_config.get("variable")
 
-    try:
-        # Read the version from the specified file type
-        if file_type == "python":
-            version: Optional[str] = read_version_from_python_file(file_path, variable)
-        elif file_type == "toml":
-            section: Optional[str] = file_config.get("section")
-            version = read_version_from_toml_file(file_path, section, variable)
-        elif file_type == "makefile":
-            version = read_version_from_makefile(file_path, variable)
-        # Add more file types as needed
-        else:
-            logging.warning(f"Unsupported file type '{file_type}' for build version.")
-            version = None
+# # Update get_build_version function in _date_functions.py
 
-        if version:
-            # Parse the version to get the last date and count
-            last_date: Optional[str]
-            last_count: Optional[int]
-            last_date, last_count = parse_version(version)
-            if last_date == current_date:
-                try:
-                    # Increment the build count if the date matches the current date
-                    build_count = int(last_count) + 1
-                except ValueError:
-                    logging.warning(
-                        f"Warning: Invalid build count '{last_count}' in {file_path}. Resetting to 1."
-                    )
-                    build_count = 1
-            else:
-                build_count = 1
-        else:
-            logging.warning(
-                f"Could not read version from {file_path}. Starting new versioning."
-            )
-    except Exception as e:
-        logging.error(f"Error reading version from {file_path}: {e}")
-        build_count = 1
 
-    # Return the formatted build version
-    return version_format.format(current_date=current_date, build_count=build_count)
+# def get_build_version(
+#     file_config: Dict[str, Any], version_format: str, timezone: str
+# ) -> str:
+#     """
+#     Generates the build version based on the current date and the build count.
+
+#     Args:
+#         file_config (Dict[str, Any]): The configuration of the file containing the current version.
+#         version_format (str): The format to use for the new version.
+#         timezone (str): The timezone to use for generating the version.
+
+#     Returns:
+#         str: The generated build version.
+#     """
+#     # Convert dot-separated path to actual file path if necessary
+#     file_path = file_config["path"]
+#     file_type = file_config.get("file_type", "")
+#     variable = file_config.get("variable", "")
+
+#     # Get the current date for versioning
+#     current_date = get_current_datetime_version(timezone)
+#     build_count = 1  # Default build count
+
+#     try:
+#         # Use the appropriate handler for reading the version
+#         handler = get_version_handler(file_type)
+#         version = handler.read_version(file_path, variable)
+
+#         if version:
+#             # Parse the version to get the last date and count
+#             parsed_version = parse_version(version)
+#             if parsed_version:
+#                 last_date, last_count = parsed_version
+#                 if last_date == current_date:
+#                     build_count = last_count + 1
+#         else:
+#             logging.warning(
+#                 f"Could not read version from {file_path}. Starting new versioning."
+#             )
+#     except Exception as e:
+#         logging.error(f"Error reading version from {file_path}: {e}")
+#         build_count = 1
+
+#     # Return the formatted build version
+#     return version_format.format(current_date=current_date, build_count=build_count)
