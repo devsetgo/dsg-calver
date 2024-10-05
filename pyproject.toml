@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bumpcalver"
-version = "2024-10-04-013"
+version = "2024-10-04-014"
 requires-python = ">=3.10"
 description = "A CLI tool for calendar-based version bumping"
 keywords = [ "python", "library", "calendar versioning", "calver", "versioning", "cli",]
@@ -48,8 +48,13 @@ variable = "APP_VERSION"
 
 [[tool.bumpcalver.file]]
 path = "examples/dockerfile"
-file_type = "makefile"
-variable = "VERSION"
+file_type = "dockerfile"
+variable = "arg.VERSION"
+
+[[tool.bumpcalver.file]]
+path = "examples/dockerfile"
+file_type = "dockerfile"
+variable = "env.APP_VERSION"
 
 [[tool.bumpcalver.file]]
 path = "examples/p.py"
