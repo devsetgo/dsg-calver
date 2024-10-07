@@ -3,7 +3,7 @@ application:
   name: ExampleApp
 configuration:
   version: 2024-10-04-022
-configuration.version: 2024-10-07-002
+configuration.version: 2024-10-07-003-bob
 database:
   host: localhost
   password: password
