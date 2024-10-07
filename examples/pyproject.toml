@@ -1,6 +1,6 @@
 [project]
 name = "example PyProject.toml"
-version = "2024-10-07-beta"
+version = "2024-10-07-003"
 requires-python = ">=3.10"
 description = "A powerful CLI tool for effortless calendar-based version management"
 keywords = [ "cli", "tool", "calendar", "version", "management", "configuration", "example",]
@@ -18,16 +18,6 @@ auto_commit = true
 path = "pyproject.toml"
 file_type = "toml"
 variable = "project.version"
-
-[[tool.bumpcalver.file]]
-path = "src/bumpcalver/__init__.py"
-file_type = "python"
-variable = "__version__"
-
-[[tool.bumpcalver.file]]
-path = "makefile"
-file_type = "makefile"
-variable = "APP_VERSION"
 
 [[tool.bumpcalver.file]]
 path = "examples/makefile"
