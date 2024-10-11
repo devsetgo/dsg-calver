@@ -75,10 +75,14 @@ def load_config() -> Dict[str, Any]:
                 pyproject: Dict[str, Any] = toml.load(f)
 
             # Extract the bumpcalver configuration from the pyproject.toml file
-            bumpcalver_config: Dict[str, Any] = pyproject.get("tool", {}).get("bumpcalver", {})
+            bumpcalver_config: Dict[str, Any] = pyproject.get("tool", {}).get(
+                "bumpcalver", {}
+            )
 
             # Set the configuration values, using defaults if not specified
-            config["version_format"] = bumpcalver_config.get("version_format", "{current_date}-{build_count:03}")
+            config["version_format"] = bumpcalver_config.get(
+                "version_format", "{current_date}-{build_count:03}"
+            )
             config["timezone"] = bumpcalver_config.get("timezone", default_timezone)
             config["file_configs"] = bumpcalver_config.get("file", [])
             config["git_tag"] = bumpcalver_config.get("git_tag", False)
@@ -87,8 +91,11 @@ def load_config() -> Dict[str, Any]:
             # Print paths for debugging
             for file_config in config["file_configs"]:
                 original_path = file_config["path"]
-                file_config["path"] = parse_dot_path(file_config["path"])
-                print(f"Original path: {original_path} -> Converted path: {file_config['path']}")  # Debug print
+                file_type = file_config.get("file_type", "")
+                file_config["path"] = parse_dot_path(original_path, file_type)
+                print(
+                    f"Original path: {original_path} -> Converted path: {file_config['path']}"
+                )
 
         except toml.TomlDecodeError as e:
             print(f"Error parsing pyproject.toml: {e}")
@@ -157,19 +164,26 @@ class PythonVersionHandler(VersionHandler):
 
     def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
         version_pattern = re.compile(
-            rf'^(\s*{re.escape(variable)}\s*=\s*)(["\'])(.+?)(["\'])\s*$', re.MULTILINE
+            rf'^(\s*{re.escape(variable)}\s*=\s*)(["\'])(.+?)(["\'])(\s*)$',
+            re.MULTILINE,
         )
         try:
             with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
-            new_content, num_subs = version_pattern.subn(
-                rf'\1"\3{new_version}\4"', content
-            )
+
+            def replacement(match):
+                return f"{match.group(1)}{match.group(2)}{new_version}{match.group(4)}{match.group(5)}"
+
+            new_content, num_subs = version_pattern.subn(replacement, content)
+
             if num_subs > 0:
                 with open(file_path, "w", encoding="utf-8") as file:
                     file.write(new_content)
+                print(f"Updated {file_path}")
                 return True
-            return False
+            else:
+                print(f"No version variable '{variable}' found in {file_path}")
+                return False
         except Exception as e:
             print(f"Error updating {file_path}: {e}")
             return False
@@ -209,9 +223,16 @@ class TomlVersionHandler(VersionHandler):
 class YamlVersionHandler(VersionHandler):
     def read_version(self, file_path: str, variable: str) -> Optional[str]:
         try:
-            with open(file_path, "r") as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
-            return data.get(variable)
+            keys = variable.split(".")
+            temp = data
+            for key in keys:
+                temp = temp.get(key)
+                if temp is None:
+                    print(f"Variable '{variable}' not found in {file_path}")
+                    return None
+            return temp
         except Exception as e:
             print(f"Error reading version from {file_path}: {e}")
             return None
@@ -220,9 +241,14 @@ class YamlVersionHandler(VersionHandler):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
-            data[variable] = new_version
+            keys = variable.split(".")
+            temp = data
+            for key in keys[:-1]:
+                temp = temp.setdefault(key, {})
+            temp[keys[-1]] = new_version
             with open(file_path, "w", encoding="utf-8") as f:
                 yaml.safe_dump(data, f)
+            print(f"Updated {file_path}")
             return True
         except Exception as e:
             print(f"Error updating {file_path}: {e}")
@@ -280,14 +306,23 @@ class XmlVersionHandler(VersionHandler):
 
 class DockerfileVersionHandler(VersionHandler):
     def read_version(self, file_path: str, variable: str) -> Optional[str]:
-        version_pattern = re.compile(
+        arg_pattern = re.compile(
             rf"^\s*ARG\s+{re.escape(variable)}\s*=\s*(.+?)\s*$", re.MULTILINE
         )
+        env_pattern = re.compile(
+            rf"^\s*ENV\s+{re.escape(variable)}\s+(.+?)\s*$", re.MULTILINE
+        )
         try:
-            with open(file_path, "r") as file:
+            with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
-            match = version_pattern.search(content)
-            return match.group(1) if match else None
+            match = arg_pattern.search(content)
+            if match:
+                return match.group(1).strip()
+            match = env_pattern.search(content)
+            if match:
+                return match.group(1).strip()
+            print(f"No ARG or ENV variable '{variable}' found in {file_path}")
+            return None
         except Exception as e:
             print(f"Error reading version from {file_path}: {e}")
             return None
@@ -369,46 +404,21 @@ def get_version_handler(file_type: str) -> VersionHandler:
         raise ValueError(f"Unsupported file type: {file_type}")
 
 
-def parse_dot_path(dot_path: str) -> str:
-    """
-    Converts dot-separated path to a proper file path, if necessary.
-
-    Args:
-        dot_path (str): The dot-separated path to the target file.
-
-    Returns:
-        str: The corresponding file system path.
-    """
-    # If the path is pyproject.toml, return it as-is
-    if dot_path == "pyproject.toml":
+def parse_dot_path(dot_path: str, file_type: str) -> str:
+    if "/" in dot_path or "\\" in dot_path or os.path.isabs(dot_path):
         return dot_path
-
-    # If the path already contains slashes, assume it's a correct file path
-    if "/" in dot_path or "\\" in dot_path:
-        return dot_path
-
-    # Convert dot-separated path to a file path and add '.py' if necessary
-    if "__init__" in dot_path:
+    if file_type == "python" and not dot_path.endswith(".py"):
         return dot_path.replace(".", os.sep) + ".py"
-    else:
-        return dot_path.replace(".", os.sep) + ".py"
+    return dot_path
 
 
 def parse_version(version: str) -> Optional[tuple]:
-    """
-    Parses the version to extract the date and count.
-
-    Args:
-        version (str): The version string.
-
-    Returns:
-        Optional[tuple]: A tuple of (date, count) if successful, otherwise None.
-    """
-    try:
-        date_str, count_str = version.split("-")
+    match = re.match(r"(\d{4}-\d{2}-\d{2})(?:-(\d+))?", version)
+    if match:
+        date_str = match.group(1)
+        count_str = match.group(2) or "0"
         return date_str, int(count_str)
-    except ValueError:
-        return None
+    return None
 
 
 def get_current_date(timezone: str = default_timezone) -> str:
@@ -436,63 +446,40 @@ def get_current_date(timezone: str = default_timezone) -> str:
 
 
 def get_current_datetime_version(timezone: str = default_timezone) -> str:
-    """
-    Get the current date as a version string.
-
-    Args:
-        timezone (str): The timezone to use for generating the version.
-
-    Returns:
-        str: A version string based on the current date.
-    """
-    now = datetime.now()
-    return now.strftime("%Y%m%d")
+    try:
+        tz = ZoneInfo(timezone)
+    except ZoneInfoNotFoundError:
+        print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
+        tz = ZoneInfo(default_timezone)
+    now = datetime.now(tz)
+    return now.strftime("%Y-%m-%d")
 
 
 def get_build_version(
     file_config: Dict[str, Any], version_format: str, timezone: str
 ) -> str:
-    """
-    Generates the build version based on the current date and the build count.
-
-    Args:
-        file_config (Dict[str, Any]): The configuration of the file containing the current version.
-        version_format (str): The format to use for the new version.
-        timezone (str): The timezone to use for generating the version.
-
-    Returns:
-        str: The generated build version.
-    """
-    # Convert dot-separated path to actual file path if necessary
     file_path = file_config["path"]
     file_type = file_config.get("file_type", "")
     variable = file_config.get("variable", "")
 
-    # Get the current date for versioning
     current_date = get_current_datetime_version(timezone)
-    build_count = 1  # Default build count
+    build_count = 1
 
     try:
-        # Use the appropriate handler for reading the version
         handler = get_version_handler(file_type)
         version = handler.read_version(file_path, variable)
 
         if version:
-            # Parse the version to get the last date and count
             parsed_version = parse_version(version)
             if parsed_version:
                 last_date, last_count = parsed_version
                 if last_date == current_date:
                     build_count = last_count + 1
-        else:
-            logger.warning(
-                f"Could not read version from {file_path}. Starting new versioning."
-            )
+            else:
+                print(f"Version '{version}' does not match expected format.")
     except Exception as e:
-        logger.error(f"Error reading version from {file_path}: {e}")
-        build_count = 1
+        print(f"Error reading version from {file_path}: {e}")
 
-    # Return the formatted build version
     return version_format.format(current_date=current_date, build_count=build_count)
 
 
