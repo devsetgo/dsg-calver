@@ -1,6 +1,6 @@
 [project]
 name = "example PyProject.toml"
-version = "2024-10-11-014-beta"
+version = "2024-10-11-015-rc"
 requires-python = ">=3.10"
 description = "A powerful CLI tool for effortless calendar-based version management"
 keywords = [ "cli", "tool", "calendar", "version", "management", "configuration", "example",]
