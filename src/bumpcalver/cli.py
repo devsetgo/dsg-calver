@@ -47,6 +47,7 @@ def update_version_in_files(
         file_path: str = file_config["path"]  # Already parsed in load_config
         file_type: str = file_config.get("file_type", "")
         variable: str = file_config.get("variable", "")
+        directive: str = file_config.get("directive", "")  # Added line
 
         if not file_type:
             print(f"No file_type specified for {file_path}")
@@ -54,7 +55,13 @@ def update_version_in_files(
 
         try:
             handler = get_version_handler(file_type)
-            success = handler.update_version(file_path, variable, new_version)
+            # Pass the directive to the handler methods if it's present
+            if directive:
+                success = handler.update_version(
+                    file_path, variable, new_version, directive=directive
+                )
+            else:
+                success = handler.update_version(file_path, variable, new_version)
             if success:
                 relative_path: str = os.path.relpath(file_path, start=os.getcwd())
                 files_updated.append(relative_path)
@@ -140,16 +147,18 @@ def create_git_tag(version: str, files_to_commit: List[str], auto_commit: bool) 
 
 class VersionHandler(ABC):
     @abstractmethod
-    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+    def read_version(self, file_path: str, variable: str, **kwargs) -> Optional[str]:
         pass
 
     @abstractmethod
-    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+    def update_version(
+        self, file_path: str, variable: str, new_version: str, **kwargs
+    ) -> bool:
         pass
 
 
 class PythonVersionHandler(VersionHandler):
-    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+    def read_version(self, file_path: str, variable: str, **kwargs) -> Optional[str]:
         version_pattern = re.compile(
             rf'^\s*{re.escape(variable)}\s*=\s*["\'](.+?)["\']\s*$', re.MULTILINE
         )
@@ -162,7 +171,9 @@ class PythonVersionHandler(VersionHandler):
             print(f"Error reading version from {file_path}: {e}")
             return None
 
-    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+    def update_version(
+        self, file_path: str, variable: str, new_version: str, **kwargs
+    ) -> bool:
         version_pattern = re.compile(
             rf'^(\s*{re.escape(variable)}\s*=\s*)(["\'])(.+?)(["\'])(\s*)$',
             re.MULTILINE,
@@ -190,38 +201,56 @@ class PythonVersionHandler(VersionHandler):
 
 
 class TomlVersionHandler(VersionHandler):
-    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+    def read_version(self, file_path: str, variable: str, **kwargs) -> Optional[str]:
         try:
             with open(file_path, "r", encoding="utf-8") as file:
                 toml_content = toml.load(file)
-                if variable in toml_content.get("project", {}):
-                    return toml_content["project"][variable]
-            return None
+            keys = variable.split(".")
+            temp = toml_content
+            for key in keys:
+                temp = temp.get(key)
+                if temp is None:
+                    print(f"Variable '{variable}' not found in {file_path}")
+                    return None
+            print(f"Reading version from {file_path} with variable '{variable}'")
+            print(f"Extracted version: {temp}")
+            return temp
         except Exception as e:
             print(f"Error reading version from {file_path}: {e}")
             return None
 
-    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+    def update_version(
+        self, file_path: str, variable: str, new_version: str, **kwargs
+    ) -> bool:
         try:
             with open(file_path, "r", encoding="utf-8") as file:
                 toml_content = toml.load(file)
 
-            # Update the version in the project section
-            if "project" in toml_content and variable in toml_content["project"]:
-                toml_content["project"][variable] = new_version
+            keys = variable.split(".")
+            temp = toml_content
+            for key in keys[:-1]:
+                if key not in temp:
+                    temp[key] = {}
+                temp = temp[key]
+            last_key = keys[-1]
+            if last_key in temp:
+                temp[last_key] = new_version
+            else:
+                print(f"Variable '{variable}' not found in {file_path}")
+                return False
 
-                with open(file_path, "w", encoding="utf-8") as file:
-                    toml.dump(toml_content, file)
+            with open(file_path, "w", encoding="utf-8") as file:
+                toml.dump(toml_content, file)
 
-                return True
-            return False
+            print(f"Updated {file_path}")
+            return True
         except Exception as e:
             print(f"Error updating {file_path}: {e}")
             return False
 
 
 class YamlVersionHandler(VersionHandler):
-    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+    def read_version(self, file_path: str, variable: str, **kwargs) -> Optional[str]:
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
@@ -237,7 +266,9 @@ class YamlVersionHandler(VersionHandler):
             print(f"Error reading version from {file_path}: {e}")
             return None
 
-    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+    def update_version(
+        self, file_path: str, variable: str, new_version: str, **kwargs
+    ) -> bool:
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
@@ -256,7 +287,7 @@ class YamlVersionHandler(VersionHandler):
 
 
 class JsonVersionHandler(VersionHandler):
-    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+    def read_version(self, file_path: str, variable: str, **kwargs) -> Optional[str]:
         try:
             with open(file_path, "r") as f:
                 data = json.load(f)
@@ -265,7 +296,9 @@ class JsonVersionHandler(VersionHandler):
             print(f"Error reading version from {file_path}: {e}")
             return None
 
-    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+    def update_version(
+        self, file_path: str, variable: str, new_version: str, **kwargs
+    ) -> bool:
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -279,7 +312,7 @@ class JsonVersionHandler(VersionHandler):
 
 
 class XmlVersionHandler(VersionHandler):
-    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+    def read_version(self, file_path: str, variable: str, **kwargs) -> Optional[str]:
         try:
             tree = ET.parse(file_path)
             root = tree.getroot()
@@ -289,7 +322,9 @@ class XmlVersionHandler(VersionHandler):
             print(f"Error reading version from {file_path}: {e}")
             return None
 
-    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+    def update_version(
+        self, file_path: str, variable: str, new_version: str, **kwargs
+    ) -> bool:
         try:
             tree = ET.parse(file_path)
             root = tree.getroot()
@@ -305,48 +340,71 @@ class XmlVersionHandler(VersionHandler):
 
 
 class DockerfileVersionHandler(VersionHandler):
-    def read_version(self, file_path: str, variable: str) -> Optional[str]:
-        arg_pattern = re.compile(
-            rf"^\s*ARG\s+{re.escape(variable)}\s*=\s*(.+?)\s*$", re.MULTILINE
+    def read_version(self, file_path: str, variable: str, **kwargs) -> Optional[str]:
+        directive = kwargs.get("directive", "").upper()
+        if directive not in ["ARG", "ENV"]:
+            print(
+                f"Invalid or missing directive for variable '{variable}' in {file_path}."
+            )
+            return None
+
+        pattern = re.compile(
+            rf"^\s*{directive}\s+{re.escape(variable)}\s*=\s*(.+?)\s*$", re.MULTILINE
         )
-        env_pattern = re.compile(
-            rf"^\s*ENV\s+{re.escape(variable)}\s+(.+?)\s*$", re.MULTILINE
-        )
+
         try:
             with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
-            match = arg_pattern.search(content)
+            match = pattern.search(content)
             if match:
                 return match.group(1).strip()
-            match = env_pattern.search(content)
-            if match:
-                return match.group(1).strip()
-            print(f"No ARG or ENV variable '{variable}' found in {file_path}")
+            print(f"No {directive} variable '{variable}' found in {file_path}")
             return None
         except Exception as e:
             print(f"Error reading version from {file_path}: {e}")
             return None
 
-    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
-        version_pattern = re.compile(
-            rf"^\s*(ARG\s+{re.escape(variable)}\s*=\s*)(.+?)\s*$", re.MULTILINE
+    def update_version(
+        self, file_path: str, variable: str, new_version: str, **kwargs
+    ) -> bool:
+        directive = kwargs.get("directive", "").upper()
+        if directive not in ["ARG", "ENV"]:
+            print(
+                f"Invalid or missing directive for variable '{variable}' in {file_path}."
+            )
+            return False
+
+        pattern = re.compile(
+            rf"(^\s*{directive}\s+{re.escape(variable)}\s*=\s*)(.+?)\s*$", re.MULTILINE
         )
+
         try:
             with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
-            new_content, num_subs = version_pattern.subn(rf"\1{new_version}", content)
+
+            def replacement(match):
+                # Debugging statements
+                print(f"Match group 1: '{match.group(1)}'")
+                print(f"Match group 2: '{match.group(2)}'")
+
+                return f"{match.group(1)}{new_version}"
+
+            new_content, num_subs = pattern.subn(replacement, content)
             if num_subs > 0:
                 with open(file_path, "w", encoding="utf-8") as file:
                     file.write(new_content)
+                print(f"Updated {directive} variable '{variable}' in {file_path}")
                 return True
-            return False
+            else:
+                print(f"No {directive} variable '{variable}' found in {file_path}")
+                return False
         except Exception as e:
             print(f"Error updating {file_path}: {e}")
             return False
 
 
 class MakefileVersionHandler(VersionHandler):
-    def read_version(self, file_path: str, variable: str) -> Optional[str]:
+    def read_version(self, file_path: str, variable: str, **kwargs) -> Optional[str]:
         version_pattern = re.compile(
             rf"^\s*{re.escape(variable)}\s*[:]?=\s*(.+?)\s*$", re.MULTILINE
         )
@@ -359,19 +417,33 @@ class MakefileVersionHandler(VersionHandler):
             print(f"Error reading version from {file_path}: {e}")
             return None
 
-    def update_version(self, file_path: str, variable: str, new_version: str) -> bool:
+    def update_version(
+        self, file_path: str, variable: str, new_version: str, **kwargs
+    ) -> bool:
         version_pattern = re.compile(
-            rf"^\s*({re.escape(variable)}\s*[:]?=\s*)(.+?)\s*$", re.MULTILINE
+            rf"^({re.escape(variable)}\s*[:]?=\s*)(.*)$", re.MULTILINE
         )
         try:
             with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
-            new_content, num_subs = version_pattern.subn(rf"\1{new_version}", content)
+
+            def replacement(match):
+                # Debugging statements
+                print(f"Match group 1: '{match.group(1)}'")
+                print(f"Match group 2: '{match.group(2)}'")
+
+                return f"{match.group(1)}{new_version}"
+
+            new_content, num_subs = version_pattern.subn(replacement, content)
+
             if num_subs > 0:
                 with open(file_path, "w", encoding="utf-8") as file:
                     file.write(new_content)
+                print(f"Updated {file_path}")
                 return True
-            return False
+            else:
+                print(f"Variable '{variable}' not found in {file_path}")
+                return False
         except Exception as e:
             print(f"Error updating {file_path}: {e}")
             return False
@@ -413,12 +485,14 @@ def parse_dot_path(dot_path: str, file_type: str) -> str:
 
 
 def parse_version(version: str) -> Optional[tuple]:
-    match = re.match(r"(\d{4}-\d{2}-\d{2})(?:-(\d+))?", version)
+    match = re.match(r"^(\d{4}-\d{2}-\d{2})(?:-(\d+))?", version)
     if match:
         date_str = match.group(1)
         count_str = match.group(2) or "0"
         return date_str, int(count_str)
-    return None
+    else:
+        print(f"Version '{version}' does not match expected format.")
+        return None
 
 
 def get_current_date(timezone: str = default_timezone) -> str:
@@ -462,10 +536,12 @@ def get_build_version(
     file_type = file_config.get("file_type", "")
     variable = file_config.get("variable", "")
 
+    # Get the current date for versioning
     current_date = get_current_datetime_version(timezone)
-    build_count = 1
+    build_count = 1  # Default build count
 
     try:
+        # Use the appropriate handler for reading the version
         handler = get_version_handler(file_type)
         version = handler.read_version(file_path, variable)
 
@@ -475,11 +551,26 @@ def get_build_version(
                 last_date, last_count = parsed_version
                 if last_date == current_date:
                     build_count = last_count + 1
+                else:
+                    build_count = 1
+
+                print(f"Current date: {current_date}")
+                print(f"Last date: {last_date}")
+                print(f"Last count: {last_count}")
+                print(f"New build count: {build_count}")
             else:
                 print(f"Version '{version}' does not match expected format.")
+                build_count = 1
+
+        else:
+            print(f"Could not read version from {file_path}. Starting new versioning.")
+            build_count = 1
+
     except Exception as e:
         print(f"Error reading version from {file_path}: {e}")
+        build_count = 1
 
+    # Return the formatted build version
     return version_format.format(current_date=current_date, build_count=build_count)
 
 
