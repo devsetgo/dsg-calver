@@ -14,8 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 80
 
 # Define environment variable
-ENV APP_VERSION=2024-10-11-001
-ARG VERSION=2024-10-11-001
-
+P24-10-11-007
+P24-10-11-007
 # Run app.py when the container launches
 CMD ["python", "app.py"]
