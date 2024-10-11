@@ -1,5 +1,5 @@
 <configuration>
-    <version>2024-10-11-019-bob</version>
+    <version>2024-10-11-020-SuperDuper</version>
     <application>
         <name>ExampleApp</name>
         <description>This is an example application configuration file.</description>
