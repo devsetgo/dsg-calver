@@ -1,4 +1,4 @@
-__version__ = "Ð241007-001-beta""
+__version__ = "Ð241011-001""
 from datetime import datetime
 from zoneinfo import ZoneInfo, available_timezones
 

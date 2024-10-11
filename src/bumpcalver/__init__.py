@@ -8,7 +8,7 @@ License: MIT
 """
 from datetime import date
 
-__version__ = "Ð241007-001-beta""
+__version__ = "Ð241011-001""
 __author__ = "Mike Ryan"
 __license__ = "MIT"
 __copyright__ = f"Copyright© 2024-{date.today().year}"
