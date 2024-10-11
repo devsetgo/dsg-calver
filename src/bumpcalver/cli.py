@@ -41,10 +41,14 @@ def main(
     """
 
     """
-    # Check for mutually exclusive options
-    if sum([beta, rc, release, bool(custom)]) > 1:
-        print("Error: Only one of --beta, --rc, --release, or --custom can be set at a time.")
-        sys.exit(1)
+        # Check for mutually exclusive options
+    selected_options = [beta, rc, release]
+    if custom:
+        selected_options.append(True)
+
+    if sum(bool(option) for option in selected_options) > 1:
+        raise click.UsageError("Only one of --beta, --rc, --release, or --custom can be set at a time.")
+
 
 
     # Load the configuration from pyproject.toml
