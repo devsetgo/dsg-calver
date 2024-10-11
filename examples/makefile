@@ -1,6 +1,6 @@
 # Variables
 REPONAME = bumpcalver
-P241007-001-beta
+P24-10-11-001
 PYTHON = python3
 PIP = $(PYTHON) -m pip
 PYTEST = $(PYTHON) -m pytest
