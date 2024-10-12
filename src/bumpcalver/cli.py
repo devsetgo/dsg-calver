@@ -33,23 +33,21 @@ def main(
     rc: bool,
     build: bool,
     release: bool,
-    custom:str,
+    custom: str,
     timezone: Optional[str],
     git_tag: Optional[bool],
     auto_commit: Optional[bool],
 ) -> None:
-    """
-
-    """
-        # Check for mutually exclusive options
+    """ """
+    # Check for mutually exclusive options
     selected_options = [beta, rc, release]
     if custom:
         selected_options.append(True)
 
     if sum(bool(option) for option in selected_options) > 1:
-        raise click.UsageError("Only one of --beta, --rc, --release, or --custom can be set at a time.")
-
-
+        raise click.UsageError(
+            "Only one of --beta, --rc, --release, or --custom can be set at a time."
+        )
 
     # Load the configuration from pyproject.toml
     config: Dict[str, Any] = load_config()
@@ -113,7 +111,6 @@ def main(
     except (ValueError, KeyError) as e:
         print(f"Error generating version: {e}")
         sys.exit(1)
-
 
 
 if __name__ == "__main__":

@@ -13,13 +13,13 @@ import yaml
 class VersionHandler(ABC):
     @abstractmethod
     def read_version(self, file_path: str, variable: str, **kwargs) -> Optional[str]:
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def update_version(
         self, file_path: str, variable: str, new_version: str, **kwargs
     ) -> bool:
-        pass
+        pass # pragma: no cover
 
 
 class PythonVersionHandler(VersionHandler):
@@ -182,7 +182,11 @@ class XmlVersionHandler(VersionHandler):
             tree = ET.parse(file_path)
             root = tree.getroot()
             element = root.find(variable)
-            return element.text if element is not None else None
+            if element is not None:
+                return element.text
+            else:
+                print(f"Variable '{variable}' not found in {file_path}")
+                return None
         except Exception as e:
             print(f"Error reading version from {file_path}: {e}")
             return None
@@ -198,6 +202,7 @@ class XmlVersionHandler(VersionHandler):
                 element.text = new_version
                 tree.write(file_path)
                 return True
+            print(f"Variable '{variable}' not found in {file_path}")
             return False
         except Exception as e:
             print(f"Error updating {file_path}: {e}")
@@ -270,14 +275,13 @@ class DockerfileVersionHandler(VersionHandler):
 
 class MakefileVersionHandler(VersionHandler):
     def read_version(self, file_path: str, variable: str, **kwargs) -> Optional[str]:
-        version_pattern = re.compile(
-            rf"^\s*{re.escape(variable)}\s*[:]?=\s*(.+?)\s*$", re.MULTILINE
-        )
         try:
             with open(file_path, "r") as file:
-                content = file.read()
-            match = version_pattern.search(content)
-            return match.group(1) if match else None
+                for line in file:
+                    if line.startswith(variable):
+                        return line.split("=")[1].strip()
+            print(f"Variable '{variable}' not found in {file_path}")
+            return None
         except Exception as e:
             print(f"Error reading version from {file_path}: {e}")
             return None
