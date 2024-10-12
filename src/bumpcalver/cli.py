@@ -59,7 +59,7 @@ def main(
     config_git_tag: bool = config.get("git_tag", False)
     config_auto_commit: bool = config.get("auto_commit", False)
 
-    if not file_configs:
+    if not file_configs: # pragma: no cover
         print("No files specified in the configuration.")
         return
 

@@ -1,6 +1,9 @@
 # tests/test_cli.py
-from bumpcalver.cli import main
+
+from unittest import mock
 from click.testing import CliRunner
+from bumpcalver.cli import main
+
 
 
 def test_beta_option():
@@ -75,4 +78,89 @@ def test_no_options():
     runner = CliRunner()
     result = runner.invoke(main, [])
     assert result.exit_code == 0
-    # Add assertions to check the default behavior when no options are used
+
+
+
+def test_build_option(monkeypatch):
+    # Mock configuration
+    mock_config = {
+        "version_format": "{current_date}-{build_count:03}",
+        "file_configs": [
+            {"path": "dummy/path/to/file", "file_type": "python", "variable": "__version__"}
+        ],
+        "timezone": "America/New_York",
+        "git_tag": False,
+        "auto_commit": False,
+    }
+    monkeypatch.setattr("bumpcalver.cli.load_config", lambda: mock_config)
+
+    # Mock get_build_version
+    mock_get_build_version = mock.Mock(return_value="2023-10-10-001")
+    monkeypatch.setattr("bumpcalver.cli.get_build_version", mock_get_build_version)
+
+    # Run the CLI command with the --build option
+    runner = CliRunner()
+    result = runner.invoke(main, ["--build"])
+
+    # Verify that get_build_version was called with the correct parameters
+    mock_get_build_version.assert_called_once_with(
+        mock_config["file_configs"][0],
+        mock_config["version_format"],
+        mock_config["timezone"]
+    )
+
+    # Verify the output
+    assert result.exit_code == 0
+    assert "Updated version to 2023-10-10-001 in specified files." in result.output
+
+
+def test_value_error(monkeypatch):
+    # Mock configuration
+    mock_config = {
+        "version_format": "{current_date}-{build_count:03}",
+        "file_configs": [
+            {"path": "dummy/path/to/file", "file_type": "python", "variable": "__version__"}
+        ],
+        "timezone": "America/New_York",
+        "git_tag": False,
+        "auto_commit": False,
+    }
+    monkeypatch.setattr("bumpcalver.cli.load_config", lambda: mock_config)
+
+    # Mock get_build_version to raise ValueError
+    mock_get_build_version = mock.Mock(side_effect=ValueError("Invalid value"))
+    monkeypatch.setattr("bumpcalver.cli.get_build_version", mock_get_build_version)
+
+    # Run the CLI command with the --build option
+    runner = CliRunner()
+    result = runner.invoke(main, ["--build"])
+
+    # Verify the output
+    assert result.exit_code == 1
+    assert "Error generating version: Invalid value" in result.output
+
+
+def test_key_error(monkeypatch):
+    # Mock configuration
+    mock_config = {
+        "version_format": "{current_date}-{build_count:03}",
+        "file_configs": [
+            {"path": "dummy/path/to/file", "file_type": "python", "variable": "__version__"}
+        ],
+        "timezone": "America/New_York",
+        "git_tag": False,
+        "auto_commit": False,
+    }
+    monkeypatch.setattr("bumpcalver.cli.load_config", lambda: mock_config)
+
+    # Mock get_build_version to raise KeyError
+    mock_get_build_version = mock.Mock(side_effect=KeyError("Missing key"))
+    monkeypatch.setattr("bumpcalver.cli.get_build_version", mock_get_build_version)
+
+    # Run the CLI command with the --build option
+    runner = CliRunner()
+    result = runner.invoke(main, ["--build"])
+
+    # Verify the output
+    assert result.exit_code == 1
+    assert "Error generating version: 'Missing key'" in result.output

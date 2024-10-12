@@ -131,7 +131,7 @@ source = [ "bumpcalver",]
 omit = [ "setup.py", "_venv/*", "tests/*", "examples/*",]
 
 [tool.coverage.report]
-exclude_lines = [ "pragma: no cover", "if __name__", "def main", "import_sqlalchemy",]
+exclude_lines = [ "pragma: no cover", "if __name__",]
 
 [tool.pytest.ini_options]
 norecursedirs = [ "/tests",]
