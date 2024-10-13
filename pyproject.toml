@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bumpcalver"
-version = "2024-10-12"
+version = "2024-10-13.beta"
 requires-python = ">=3.10"
 description = "A CLI tool for calendar-based version bumping"
 keywords = [ "python", "library", "calendar versioning", "calver", "versioning", "cli",]
@@ -40,63 +40,75 @@ auto_commit = true
 path = "pyproject.toml"
 file_type = "toml"
 variable = "project.version"
+version_standard = "python"
 
 [[tool.bumpcalver.file]]
 path = "src/bumpcalver/__init__.py"
 file_type = "python"
 variable = "__version__"
+version_standard = "python"
 
 [[tool.bumpcalver.file]]
 path = "makefile"
 file_type = "makefile"
 variable = "APP_VERSION"
+version_standard = "standard"
 
 [[tool.bumpcalver.file]]
 path = "examples/makefile"
 file_type = "makefile"
 variable = "APP_VERSION"
+version_standard = "standard"
 
 [[tool.bumpcalver.file]]
 path = "examples/dockerfile"
 file_type = "dockerfile"
 variable = "VERSION"
 directive = "ARG"
+version_standard = "standard"
 
 [[tool.bumpcalver.file]]
 path = "examples/dockerfile"
 file_type = "dockerfile"
 variable = "APP_VERSION"
 directive = "ENV"
+version_standard = "standard"
 
 [[tool.bumpcalver.file]]
 path = "examples/example.py"
 file_type = "python"
 variable = "__version__"
+version_standard = "python"
 
 [[tool.bumpcalver.file]]
 path = "examples/pyproject.toml"
 file_type = "toml"
 variable = "project.version"
+version_standard = "python"
 
 [[tool.bumpcalver.file]]
 path = "examples/example.xml"
 file_type = "xml"
 variable = "version"
+version_standard = "standard"
 
 [[tool.bumpcalver.file]]
 path = "examples/example.json"
 file_type = "json"
 variable = "version"
+version_standard = "standard"
 
 [[tool.bumpcalver.file]]
 path = "examples/example.yaml"
 file_type = "yaml"
 variable = "configuration.version"
+version_standard = "standard"
 
 [[tool.bumpcalver.file]]
 path = "examples/example.toml"
 file_type = "toml"
 variable = "configuration.version"
+version_standard = "standard"
 
 [tool.ruff]
 line-length = 100
