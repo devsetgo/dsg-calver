@@ -38,4 +38,3 @@ variable = "env.APP_VERSION"
 path = "examples/p.py"
 file_type = "python"
 variable = "__version__"
-
