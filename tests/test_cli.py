@@ -2,7 +2,7 @@
 
 from unittest import mock
 from click.testing import CliRunner
-from bumpcalver.cli import main
+from src.bumpcalver.cli import main
 
 
 
@@ -92,11 +92,11 @@ def test_build_option(monkeypatch):
         "git_tag": False,
         "auto_commit": False,
     }
-    monkeypatch.setattr("bumpcalver.cli.load_config", lambda: mock_config)
+    monkeypatch.setattr("src.bumpcalver.cli.load_config", lambda: mock_config)
 
     # Mock get_build_version
     mock_get_build_version = mock.Mock(return_value="2023-10-10-001")
-    monkeypatch.setattr("bumpcalver.cli.get_build_version", mock_get_build_version)
+    monkeypatch.setattr("src.bumpcalver.cli.get_build_version", mock_get_build_version)
 
     # Run the CLI command with the --build option
     runner = CliRunner()
@@ -125,11 +125,11 @@ def test_value_error(monkeypatch):
         "git_tag": False,
         "auto_commit": False,
     }
-    monkeypatch.setattr("bumpcalver.cli.load_config", lambda: mock_config)
+    monkeypatch.setattr("src.bumpcalver.cli.load_config", lambda: mock_config)
 
     # Mock get_build_version to raise ValueError
     mock_get_build_version = mock.Mock(side_effect=ValueError("Invalid value"))
-    monkeypatch.setattr("bumpcalver.cli.get_build_version", mock_get_build_version)
+    monkeypatch.setattr("src.bumpcalver.cli.get_build_version", mock_get_build_version)
 
     # Run the CLI command with the --build option
     runner = CliRunner()
@@ -151,11 +151,11 @@ def test_key_error(monkeypatch):
         "git_tag": False,
         "auto_commit": False,
     }
-    monkeypatch.setattr("bumpcalver.cli.load_config", lambda: mock_config)
+    monkeypatch.setattr("src.bumpcalver.cli.load_config", lambda: mock_config)
 
     # Mock get_build_version to raise KeyError
     mock_get_build_version = mock.Mock(side_effect=KeyError("Missing key"))
-    monkeypatch.setattr("bumpcalver.cli.get_build_version", mock_get_build_version)
+    monkeypatch.setattr("src.bumpcalver.cli.get_build_version", mock_get_build_version)
 
     # Run the CLI command with the --build option
     runner = CliRunner()

@@ -4,7 +4,7 @@ import subprocess
 from unittest import mock
 
 import pytest
-from bumpcalver.git_utils import create_git_tag
+from src.bumpcalver.git_utils import create_git_tag
 
 
 def test_create_git_tag_tag_exists(monkeypatch, capsys):

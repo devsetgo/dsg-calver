@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 import toml
 import yaml
-from bumpcalver.handlers import (
+from src.bumpcalver.handlers import (
     DockerfileVersionHandler,
     JsonVersionHandler,
     MakefileVersionHandler,
@@ -510,7 +510,7 @@ def test_python_handler_update_version_variable_not_found(monkeypatch, capsys):
 
 
 def test_toml_handler_read_version_malformed_toml(monkeypatch, capsys):
-    from bumpcalver import handlers
+    from src.bumpcalver import handlers
 
     handler = handlers.TomlVersionHandler()
 
@@ -532,7 +532,7 @@ def test_toml_handler_read_version_malformed_toml(monkeypatch, capsys):
 
 
 def test_toml_handler_update_version_exception(monkeypatch, capsys):
-    from bumpcalver import handlers
+    from src.bumpcalver import handlers
 
     handler = handlers.TomlVersionHandler()
 

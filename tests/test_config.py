@@ -4,7 +4,7 @@ import sys
 from unittest import mock
 
 import toml
-from bumpcalver.config import load_config
+from src.bumpcalver.config import load_config
 
 
 def test_load_config_with_valid_pyproject(monkeypatch):
@@ -37,7 +37,7 @@ def test_load_config_with_valid_pyproject(monkeypatch):
     monkeypatch.setattr(toml, "load", mock_toml_load)
 
     # Mock parse_dot_path
-    monkeypatch.setattr("bumpcalver.config.parse_dot_path", lambda x, y: x)
+    monkeypatch.setattr("src.bumpcalver.config.parse_dot_path", lambda x, y: x)
 
     # Mock open
     monkeypatch.setattr("builtins.open", mock.mock_open())
@@ -117,7 +117,7 @@ def test_load_config_with_missing_values(monkeypatch):
 
     # Mock parse_dot_path (should not be called)
     parse_dot_path_mock = mock.Mock()
-    monkeypatch.setattr("bumpcalver.config.parse_dot_path", parse_dot_path_mock)
+    monkeypatch.setattr("src.bumpcalver.config.parse_dot_path", parse_dot_path_mock)
 
     # Mock open
     monkeypatch.setattr("builtins.open", mock.mock_open())
