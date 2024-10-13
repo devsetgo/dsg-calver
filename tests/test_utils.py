@@ -111,7 +111,9 @@ def test_get_build_version_version_exists_today(monkeypatch):
 
     mock_handler = mock.Mock()
     mock_handler.read_version.return_value = "2023-10-11-1"
-    monkeypatch.setattr("src.bumpcalver.utils.get_version_handler", lambda ft: mock_handler)
+    monkeypatch.setattr(
+        "src.bumpcalver.utils.get_version_handler", lambda ft: mock_handler
+    )
 
     file_config = {
         "path": "dummy_path",
@@ -131,7 +133,9 @@ def test_get_build_version_version_exists_not_today(monkeypatch):
 
     mock_handler = mock.Mock()
     mock_handler.read_version.return_value = "2023-10-10-5"
-    monkeypatch.setattr("src.bumpcalver.utils.get_version_handler", lambda ft: mock_handler)
+    monkeypatch.setattr(
+        "src.bumpcalver.utils.get_version_handler", lambda ft: mock_handler
+    )
 
     file_config = {
         "path": "dummy_path",
@@ -151,7 +155,9 @@ def test_get_build_version_version_not_found(monkeypatch, capsys):
 
     mock_handler = mock.Mock()
     mock_handler.read_version.return_value = None
-    monkeypatch.setattr("src.bumpcalver.utils.get_version_handler", lambda ft: mock_handler)
+    monkeypatch.setattr(
+        "src.bumpcalver.utils.get_version_handler", lambda ft: mock_handler
+    )
 
     file_config = {
         "path": "dummy_path",
@@ -177,7 +183,9 @@ def test_get_build_version_invalid_version_format(monkeypatch, capsys):
 
     mock_handler = mock.Mock()
     mock_handler.read_version.return_value = "v1.0.0"
-    monkeypatch.setattr("src.bumpcalver.utils.get_version_handler", lambda ft: mock_handler)
+    monkeypatch.setattr(
+        "src.bumpcalver.utils.get_version_handler", lambda ft: mock_handler
+    )
 
     file_config = {
         "path": "dummy_path",
@@ -200,7 +208,9 @@ def test_get_build_version_exception_during_read(monkeypatch, capsys):
 
     mock_handler = mock.Mock()
     mock_handler.read_version.side_effect = Exception("Read error")
-    monkeypatch.setattr("src.bumpcalver.utils.get_version_handler", lambda ft: mock_handler)
+    monkeypatch.setattr(
+        "src.bumpcalver.utils.get_version_handler", lambda ft: mock_handler
+    )
 
     file_config = {
         "path": "dummy_path",
@@ -223,7 +233,9 @@ def test_get_build_version_with_directive(monkeypatch):
 
     mock_handler = mock.Mock()
     mock_handler.read_version.return_value = "2023-10-11-1"
-    monkeypatch.setattr("src.bumpcalver.utils.get_version_handler", lambda ft: mock_handler)
+    monkeypatch.setattr(
+        "src.bumpcalver.utils.get_version_handler", lambda ft: mock_handler
+    )
 
     file_config = {
         "path": "dummy_path",

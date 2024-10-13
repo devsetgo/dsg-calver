@@ -1,9 +1,9 @@
 # tests/test_cli.py
 
 from unittest import mock
+
 from click.testing import CliRunner
 from src.bumpcalver.cli import main
-
 
 
 def test_beta_option():
@@ -80,13 +80,16 @@ def test_no_options():
     assert result.exit_code == 0
 
 
-
 def test_build_option(monkeypatch):
     # Mock configuration
     mock_config = {
         "version_format": "{current_date}-{build_count:03}",
         "file_configs": [
-            {"path": "dummy/path/to/file", "file_type": "python", "variable": "__version__"}
+            {
+                "path": "dummy/path/to/file",
+                "file_type": "python",
+                "variable": "__version__",
+            }
         ],
         "timezone": "America/New_York",
         "git_tag": False,
@@ -106,7 +109,7 @@ def test_build_option(monkeypatch):
     mock_get_build_version.assert_called_once_with(
         mock_config["file_configs"][0],
         mock_config["version_format"],
-        mock_config["timezone"]
+        mock_config["timezone"],
     )
 
     # Verify the output
@@ -119,7 +122,11 @@ def test_value_error(monkeypatch):
     mock_config = {
         "version_format": "{current_date}-{build_count:03}",
         "file_configs": [
-            {"path": "dummy/path/to/file", "file_type": "python", "variable": "__version__"}
+            {
+                "path": "dummy/path/to/file",
+                "file_type": "python",
+                "variable": "__version__",
+            }
         ],
         "timezone": "America/New_York",
         "git_tag": False,
@@ -145,7 +152,11 @@ def test_key_error(monkeypatch):
     mock_config = {
         "version_format": "{current_date}-{build_count:03}",
         "file_configs": [
-            {"path": "dummy/path/to/file", "file_type": "python", "variable": "__version__"}
+            {
+                "path": "dummy/path/to/file",
+                "file_type": "python",
+                "variable": "__version__",
+            }
         ],
         "timezone": "America/New_York",
         "git_tag": False,

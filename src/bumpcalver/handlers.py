@@ -1,5 +1,4 @@
 import json
-import os
 import re
 import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
@@ -9,17 +8,32 @@ import toml
 import yaml
 
 
-# Concrete handlers
+# Abstract base class for version handlers
 class VersionHandler(ABC):
     @abstractmethod
-    def read_version(self, file_path: str, variable: str, **kwargs) -> Optional[str]:
-        pass # pragma: no cover
+    def read_version(
+        self, file_path: str, variable: str, **kwargs
+    ) -> Optional[str]:  # pragma: no cover
+        pass
 
     @abstractmethod
     def update_version(
         self, file_path: str, variable: str, new_version: str, **kwargs
-    ) -> bool:
-        pass # pragma: no cover
+    ) -> bool:  # pragma: no cover
+        pass
+
+    def format_version(self, version: str, standard: str) -> str:
+        if standard == "python":
+            return self.format_pep440_version(version)
+        return version
+
+    def format_pep440_version(self, version: str) -> str:
+        # Implement PEP 440 formatting rules
+        # Replace hyphens and underscores with dots
+        version = version.replace("-", ".").replace("_", ".")
+        # Ensure no leading zeros in numeric segments
+        version = re.sub(r"\b0+(\d)", r"\1", version)
+        return version
 
 
 class PythonVersionHandler(VersionHandler):
@@ -31,7 +45,10 @@ class PythonVersionHandler(VersionHandler):
             with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
             match = version_pattern.search(content)
-            return match.group(1) if match else None
+            if match:
+                return match.group(1)
+            print(f"Variable '{variable}' not found in {file_path}")
+            return None
         except Exception as e:
             print(f"Error reading version from {file_path}: {e}")
             return None
@@ -39,6 +56,8 @@ class PythonVersionHandler(VersionHandler):
     def update_version(
         self, file_path: str, variable: str, new_version: str, **kwargs
     ) -> bool:
+        version_standard = kwargs.get("version_standard", "default")
+        new_version = self.format_version(new_version, version_standard)
         version_pattern = re.compile(
             rf'^(\s*{re.escape(variable)}\s*=\s*)(["\'])(.+?)(["\'])(\s*)$',
             re.MULTILINE,
@@ -58,7 +77,7 @@ class PythonVersionHandler(VersionHandler):
                 print(f"Updated {file_path}")
                 return True
             else:
-                print(f"No version variable '{variable}' found in {file_path}")
+                print(f"Variable '{variable}' not found in {file_path}")
                 return False
         except Exception as e:
             print(f"Error updating {file_path}: {e}")
@@ -77,8 +96,6 @@ class TomlVersionHandler(VersionHandler):
                 if temp is None:
                     print(f"Variable '{variable}' not found in {file_path}")
                     return None
-            print(f"Reading version from {file_path} with variable '{variable}'")
-            print(f"Extracted version: {temp}")
             return temp
         except Exception as e:
             print(f"Error reading version from {file_path}: {e}")
@@ -87,6 +104,9 @@ class TomlVersionHandler(VersionHandler):
     def update_version(
         self, file_path: str, variable: str, new_version: str, **kwargs
     ) -> bool:
+        version_standard = kwargs.get("version_standard", "default")
+        new_version = self.format_version(new_version, version_standard)
+
         try:
             with open(file_path, "r", encoding="utf-8") as file:
                 toml_content = toml.load(file)
@@ -134,6 +154,9 @@ class YamlVersionHandler(VersionHandler):
     def update_version(
         self, file_path: str, variable: str, new_version: str, **kwargs
     ) -> bool:
+        version_standard = kwargs.get("version_standard", "default")
+        new_version = self.format_version(new_version, version_standard)
+
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
@@ -154,7 +177,7 @@ class YamlVersionHandler(VersionHandler):
 class JsonVersionHandler(VersionHandler):
     def read_version(self, file_path: str, variable: str, **kwargs) -> Optional[str]:
         try:
-            with open(file_path, "r") as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             return data.get(variable)
         except Exception as e:
@@ -164,6 +187,9 @@ class JsonVersionHandler(VersionHandler):
     def update_version(
         self, file_path: str, variable: str, new_version: str, **kwargs
     ) -> bool:
+        version_standard = kwargs.get("version_standard", "default")
+        new_version = self.format_version(new_version, version_standard)
+
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -184,9 +210,8 @@ class XmlVersionHandler(VersionHandler):
             element = root.find(variable)
             if element is not None:
                 return element.text
-            else:
-                print(f"Variable '{variable}' not found in {file_path}")
-                return None
+            print(f"Variable '{variable}' not found in {file_path}")
+            return None
         except Exception as e:
             print(f"Error reading version from {file_path}: {e}")
             return None
@@ -194,6 +219,9 @@ class XmlVersionHandler(VersionHandler):
     def update_version(
         self, file_path: str, variable: str, new_version: str, **kwargs
     ) -> bool:
+        version_standard = kwargs.get("version_standard", "default")
+        new_version = self.format_version(new_version, version_standard)
+
         try:
             tree = ET.parse(file_path)
             root = tree.getroot()
@@ -244,6 +272,9 @@ class DockerfileVersionHandler(VersionHandler):
             )
             return False
 
+        version_standard = kwargs.get("version_standard", "default")
+        new_version = self.format_version(new_version, version_standard)
+
         pattern = re.compile(
             rf"(^\s*{directive}\s+{re.escape(variable)}\s*=\s*)(.+?)\s*$", re.MULTILINE
         )
@@ -253,10 +284,6 @@ class DockerfileVersionHandler(VersionHandler):
                 content = file.read()
 
             def replacement(match):
-                # Debugging statements
-                print(f"Match group 1: '{match.group(1)}'")
-                print(f"Match group 2: '{match.group(2)}'")
-
                 return f"{match.group(1)}{new_version}"
 
             new_content, num_subs = pattern.subn(replacement, content)
@@ -289,6 +316,9 @@ class MakefileVersionHandler(VersionHandler):
     def update_version(
         self, file_path: str, variable: str, new_version: str, **kwargs
     ) -> bool:
+        version_standard = kwargs.get("version_standard", "default")
+        new_version = self.format_version(new_version, version_standard)
+
         version_pattern = re.compile(
             rf"^({re.escape(variable)}\s*[:]?=\s*)(.*)$", re.MULTILINE
         )
@@ -297,10 +327,6 @@ class MakefileVersionHandler(VersionHandler):
                 content = file.read()
 
             def replacement(match):
-                # Debugging statements
-                print(f"Match group 1: '{match.group(1)}'")
-                print(f"Match group 2: '{match.group(2)}'")
-
                 return f"{match.group(1)}{new_version}"
 
             new_content, num_subs = version_pattern.subn(replacement, content)
@@ -343,28 +369,20 @@ def update_version_in_files(
     files_updated: List[str] = []
 
     for file_config in file_configs:
-        file_path: str = file_config["path"]  # Already parsed in load_config
+        file_path: str = file_config["path"]
         file_type: str = file_config.get("file_type", "")
         variable: str = file_config.get("variable", "")
         directive: str = file_config.get("directive", "")
+        version_standard: str = file_config.get("version_standard", "default")
 
-        if not file_type:
-            print(f"No file_type specified for {file_path}")
-            continue
-
-        try:
-            handler = get_version_handler(file_type)
-            # Pass the directive to the handler methods if it's present
-            if directive:
-                success = handler.update_version(
-                    file_path, variable, new_version, directive=directive
-                )
-            else:
-                success = handler.update_version(file_path, variable, new_version)
-            if success:
-                relative_path: str = os.path.relpath(file_path, start=os.getcwd())
-                files_updated.append(relative_path)
-        except ValueError as e:
-            print(e)
+        handler = get_version_handler(file_type)
+        if handler.update_version(
+            file_path,
+            variable,
+            new_version,
+            directive=directive,
+            version_standard=version_standard,
+        ):
+            files_updated.append(file_path)
 
     return files_updated

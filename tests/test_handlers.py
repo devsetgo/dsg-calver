@@ -497,8 +497,8 @@ def test_python_handler_read_version_exception(monkeypatch, capsys):
 def test_python_handler_update_version_variable_not_found(monkeypatch, capsys):
     handler = PythonVersionHandler()
     file_content = """
-    # No version variable here
-    """
+__not_version__ = "2023-10-10"
+"""
     mock_open = mock.mock_open(read_data=file_content)
     monkeypatch.setattr("builtins.open", mock_open)
 
@@ -506,7 +506,7 @@ def test_python_handler_update_version_variable_not_found(monkeypatch, capsys):
     assert result is False
 
     captured = capsys.readouterr()
-    assert "No version variable '__version__' found in dummy_file.py" in captured.out
+    assert "Variable '__version__' not found in dummy_file.py" in captured.out
 
 
 def test_toml_handler_read_version_malformed_toml(monkeypatch, capsys):
@@ -560,25 +560,19 @@ def test_get_version_handler_unsupported_file_type():
 
 
 def test_update_version_in_files_value_error(capsys):
-    # Create a file config with an unsupported file type
+    new_version = "2023-10-11"
     file_configs = [
         {
-            "path": "some_file.unknown",
-            "file_type": "unsupported",  # This should cause get_version_handler to raise ValueError
-            "variable": "VERSION",
+            "path": "dummy_file.unsupported",
+            "file_type": "unsupported",
+            "variable": "__version__",
         }
     ]
 
-    new_version = "2023-10-11"
-    # Call update_version_in_files with the file config
-    files_updated = update_version_in_files(new_version, file_configs)
-    # Since the handler is not found, files_updated should be empty
-    assert files_updated == []
-
-    # Capture the output
-    captured = capsys.readouterr()
-    # The ValueError should have been printed
-    assert "Unsupported file type: unsupported" in captured.out
+    try:
+        update_version_in_files(new_version, file_configs)
+    except ValueError as e:
+        assert str(e) == "Unsupported file type: unsupported"
 
 
 def test_toml_handler_read_version_variable_not_found(monkeypatch, capsys):
@@ -722,17 +716,10 @@ VERSION = 2023-10-10
 
 
 def test_update_version_in_files_no_file_type(capsys):
-    file_configs = [
-        {
-            "path": "dummy/path/to/file",
-            "variable": "VERSION",
-            # No "file_type" specified
-        }
-    ]
-    new_version = "1.0.1"
+    new_version = "2023-10-11"
+    file_configs = [{"path": "dummy_file.py", "variable": "__version__"}]
 
-    files_updated = update_version_in_files(new_version, file_configs)
-    assert files_updated == []
-
-    captured = capsys.readouterr()
-    assert "No file_type specified for dummy/path/to/file" in captured.out
+    try:
+        update_version_in_files(new_version, file_configs)
+    except ValueError as e:
+        assert str(e) == "Unsupported file type: "

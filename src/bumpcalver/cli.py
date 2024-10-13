@@ -59,7 +59,7 @@ def main(
     config_git_tag: bool = config.get("git_tag", False)
     config_auto_commit: bool = config.get("auto_commit", False)
 
-    if not file_configs: # pragma: no cover
+    if not file_configs:  # pragma: no cover
         print("No files specified in the configuration.")
         return
 
@@ -92,13 +92,13 @@ def main(
             new_version = get_current_datetime_version(timezone)
 
         if beta:
-            new_version += "-beta"
+            new_version += ".beta"
         elif rc:
-            new_version += "-rc"
+            new_version += ".rc"
         elif release:
-            new_version += "-release"
+            new_version += ".release"
         elif custom:
-            new_version += f"-{custom}"
+            new_version += f".{custom}"
 
         # Update the version in the specified files
         files_updated: List[str] = update_version_in_files(new_version, file_configs)
