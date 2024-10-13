@@ -2,7 +2,7 @@ application:
   description: This is an example application configuration file.
   name: ExampleApp
 configuration:
-  version: '2024-10-12'
+  version: 2024-10-12-rc
 database:
   host: localhost
   password: password
@@ -12,3 +12,4 @@ features:
   feature_a: true
   feature_b: false
   feature_c: true
+ue
