@@ -7,6 +7,8 @@ Support Python Versions
 
 ![Static Badge](https://img.shields.io/badge/Python-3.13%20%7C%203.12%20%7C%203.11%20%7C%203.10%20-blue)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Coverage Status](./coverage-badge.svg?dummy=8484744)](./reports/coverage/index.html)
+[![Tests Status](./tests-badge.svg?dummy=8484744)](./reports/coverage/index.html)
 
 CI/CD Pipeline:
 
@@ -22,6 +24,9 @@ SonarCloud:
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_bumpcalver&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=devsetgo_bumpcalver)
 
 # BumpCalver CLI Documentation
+
+## Note
+This project should be consider in beta and is not yet ready for production use.
 
 ## Overview
 
@@ -208,6 +213,3 @@ bumpcalver --build --git-tag --auto-commit
 For issues or questions, please open an issue on the project's repository.
 
 ---
-```
-
-This updated documentation should reflect the extensive changes you've made to the [`bumpcalver`](command:_github.copilot.openSymbolFromReferences?%5B%22%22%2C%5B%7B%22uri%22%3A%7B%22scheme%22%3A%22file%22%2C%22authority%22%3A%22%22%2C%22path%22%3A%22%2Fworkspaces%2Fbumpcalver%2Fdocs%2Findex.md%22%2C%22query%22%3A%22%22%2C%22fragment%22%3A%22%22%7D%2C%22pos%22%3A%7B%22line%22%3A2%2C%22character%22%3A50%7D%7D%2C%7B%22uri%22%3A%7B%22scheme%22%3A%22file%22%2C%22authority%22%3A%22%22%2C%22path%22%3A%22%2Fworkspaces%2Fbumpcalver%2Fexamples%2Fpyproject.toml%22%2C%22query%22%3A%22%22%2C%22fragment%22%3A%22%22%7D%2C%22pos%22%3A%7B%22line%22%3A11%2C%22character%22%3A6%7D%7D%2C%7B%22uri%22%3A%7B%22scheme%22%3A%22file%22%2C%22authority%22%3A%22%22%2C%22path%22%3A%22%2Fworkspaces%2Fbumpcalver%2Fsrc%2Fbumpcalver%2F__init__.py%22%2C%22query%22%3A%22%22%2C%22fragment%22%3A%22%22%7D%2C%22pos%22%3A%7B%22line%22%3A1%2C%22character%22%3A6%7D%7D%2C%7B%22uri%22%3A%7B%22scheme%22%3A%22file%22%2C%22authority%22%3A%22%22%2C%22path%22%3A%22%2Fworkspaces%2Fbumpcalver%2Fsrc%2Fbumpcalver%2Fconfig.py%22%2C%22query%22%3A%22%22%2C%22fragment%22%3A%22%22%7D%2C%22pos%22%3A%7B%22line%22%3A18%2C%22character%22%3A17%7D%7D%5D%2C%2215e94d24-4fef-438a-9ddc-96eb7da376de%22%5D "Go to definition") project. It includes detailed information on installation, configuration, command-line usage, examples, error handling, and support.
