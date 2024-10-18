@@ -923,11 +923,15 @@ Options:
 
 <span class="k">[[tool.bumpcalver.file]]</span>
 <span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;version.py&quot;</span>
+<span class="n">file_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;python&quot;</span>
 <span class="n">variable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;__version__&quot;</span>
+<span class="n">version_standard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;python&quot;</span>
 
 <span class="k">[[tool.bumpcalver.file]]</span>
 <span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;src/module_name/__init__.py&quot;</span>
+<span class="n">file_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;python&quot;</span>
 <span class="n">variable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;__version__&quot;</span>
+<span class="n">version_standard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;python&quot;</span>
 </code></pre></div>
 <p>This configuration tells <strong>BumpCalver</strong> how to format your version strings, which timezone to use, and which files to update.</p>
 <h4 id="quickstart-basic-version-bump">Basic Version Bump<a class="headerlink" href="#quickstart-basic-version-bump" title="Permanent link">&para;</a></h4>
@@ -937,7 +941,7 @@ Options:
 <p>This command will:</p>
 <ul>
 <li>Increment the build count for the current date.</li>
-<li>Update the <code>__version__</code> variable in <code>version.py</code>.</li>
+<li>Update the <code>__version__</code> variable in <code>version.py</code> and <code>src/module_name/__init__.py</code>.</li>
 <li>Use the timezone specified in your configuration (<code>UTC</code> in this case).</li>
 </ul>
 <h4 id="quickstart-beta-versioning">Beta Versioning<a class="headerlink" href="#quickstart-beta-versioning" title="Permanent link">&para;</a></h4>
@@ -991,10 +995,7 @@ Options:
 </code></pre></div>
 <hr />
 <h3 id="quickstart-summary">Summary<a class="headerlink" href="#quickstart-summary" title="Permanent link">&para;</a></h3>
-<p>With <strong>BumpCalver</strong>, you can automate version management based on the calendar date and build counts, ensuring consistent and meaningful version numbers across your project.</p>
-<hr />
-<p><em>For any issues or contributions, please visit the <a href="#quickstart-">project repository</a> or contact <a href="mailto:support@example.com">support</a>.</em></p>
-<p><em>Note: Replace placeholders with actual URLs or email addresses relevant to your project.</em></p></section><section class="print-page" id="timezones"><h1 id="timezones-timezones">Timezones<a class="headerlink" href="#timezones-timezones" title="Permanent link">&para;</a></h1>
+<p>With <strong>BumpCalver</strong>, you can automate version management based on the calendar date and build counts, ensuring consistent and meaningful version numbers across your project.</p></section><section class="print-page" id="timezones"><h1 id="timezones-timezones">Timezones<a class="headerlink" href="#timezones-timezones" title="Permanent link">&para;</a></h1>
 <p>Here is a list of all timezones that can be utilized. You can search for a specific timezone by typing in the search bar.</p>
 <p><input type="text" id="timezones-searchInput" onkeyup="searchTable()" placeholder="Search for timezones.."></p>
 <table id="timezonesTable">

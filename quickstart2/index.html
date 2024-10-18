@@ -13,10 +13,6 @@
       
       
       
-        <link rel="prev" href="..">
-      
-      
-        <link rel="next" href="../timezones/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -24,7 +20,7 @@
     
     
       
-        <title>QuickStart - BumpCalver Library</title>
+        <title>Quick Start - BumpCalver Library</title>
       
     
     
@@ -130,7 +126,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              QuickStart
+              Quick Start
             
           </span>
         </div>
@@ -246,11 +242,9 @@
         
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../quickstart/" class="md-tabs__link">
         
   
     
@@ -408,30 +402,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    QuickStart
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -440,140 +414,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#install" class="md-nav__link">
-    <span class="md-ellipsis">
-      Install
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Usage
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Usage">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#initialize-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Initialize Configuration
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#basic-version-bump" class="md-nav__link">
-    <span class="md-ellipsis">
-      Basic Version Bump
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#beta-versioning" class="md-nav__link">
-    <span class="md-ellipsis">
-      Beta Versioning
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#specify-timezone" class="md-nav__link">
-    <span class="md-ellipsis">
-      Specify Timezone
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#create-a-git-tag-with-auto-commit" class="md-nav__link">
-    <span class="md-ellipsis">
-      Create a Git Tag with Auto-Commit
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#additional-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Additional Options
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-documentation" class="md-nav__link">
-    <span class="md-ellipsis">
-      See Documentation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example-versionpy-file" class="md-nav__link">
-    <span class="md-ellipsis">
-      Example version.py File
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#integrate-with-your-project" class="md-nav__link">
-    <span class="md-ellipsis">
-      Integrate with Your Project
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      Summary
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -758,15 +598,11 @@
 
 <span class="k">[[tool.bumpcalver.file]]</span>
 <span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;version.py&quot;</span>
-<span class="n">file_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;python&quot;</span>
 <span class="n">variable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;__version__&quot;</span>
-<span class="n">version_standard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;python&quot;</span>
 
 <span class="k">[[tool.bumpcalver.file]]</span>
 <span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;src/module_name/__init__.py&quot;</span>
-<span class="n">file_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;python&quot;</span>
 <span class="n">variable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;__version__&quot;</span>
-<span class="n">version_standard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;python&quot;</span>
 </code></pre></div>
 <p>This configuration tells <strong>BumpCalver</strong> how to format your version strings, which timezone to use, and which files to update.</p>
 <h4 id="basic-version-bump">Basic Version Bump<a class="headerlink" href="#basic-version-bump" title="Permanent link">&para;</a></h4>
@@ -776,7 +612,7 @@
 <p>This command will:</p>
 <ul>
 <li>Increment the build count for the current date.</li>
-<li>Update the <code>__version__</code> variable in <code>version.py</code> and <code>src/module_name/__init__.py</code>.</li>
+<li>Update the <code>__version__</code> variable in <code>version.py</code>.</li>
 <li>Use the timezone specified in your configuration (<code>UTC</code> in this case).</li>
 </ul>
 <h4 id="beta-versioning">Beta Versioning<a class="headerlink" href="#beta-versioning" title="Permanent link">&para;</a></h4>
@@ -831,6 +667,9 @@
 <hr />
 <h3 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h3>
 <p>With <strong>BumpCalver</strong>, you can automate version management based on the calendar date and build counts, ensuring consistent and meaningful version numbers across your project.</p>
+<hr />
+<p><em>For any issues or contributions, please visit the <a href="#">project repository</a> or contact <a href="mailto:support@example.com">support</a>.</em></p>
+<p><em>Note: Replace placeholders with actual URLs or email addresses relevant to your project.</em></p>
 
 
 
