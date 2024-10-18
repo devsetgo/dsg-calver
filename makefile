@@ -1,6 +1,6 @@
 # Variables
 REPONAME = bumpcalver
-APP_VERSION = 2024-10-13
+APP_VERSION = 2024-10-18
 PYTHON = python3
 PIP = $(PYTHON) -m pip
 PYTEST = $(PYTHON) -m pytest
@@ -72,6 +72,7 @@ test: ## Run the project's tests
 	pytest
 	sed -i 's|<source>/workspaces/$(REPONAME)</source>|<source>/github/workspace</source>|' /workspaces/$(REPONAME)/coverage.xml
 	genbadge coverage -i /workspaces/$(REPONAME)/coverage.xml
+	genbadge tests -i /workspaces/$(REPONAME)/report.xml
 # flake8 src tests examples | tee htmlcov/_flake8Report.txt
 
 tests: test ## Run the project's tests

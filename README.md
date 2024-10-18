@@ -1,5 +1,3 @@
-Python:
-
 [![PyPI version fury.io](https://badge.fury.io/py/bumpcalver.svg)](https://pypi.python.org/pypi/bumpcalver/)
 [![Downloads](https://static.pepy.tech/badge/bumpcalver)](https://pepy.tech/project/bumpcalver)
 [![Downloads](https://static.pepy.tech/badge/bumpcalver/month)](https://pepy.tech/project/bumpcalver)
@@ -7,8 +5,10 @@ Python:
 
 Support Python Versions
 
-![Static Badge](https://img.shields.io/badge/Python-3.12%20%7C%203.11%20%7C%203.10%20-blue)
+![Static Badge](https://img.shields.io/badge/Python-3.13%20%7C%203.12%20%7C%203.11%20%7C%203.10%20-blue)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Coverage Status](./coverage-badge.svg?dummy=8484744)](./reports/coverage/index.html)
+[![Tests Status](./tests-badge.svg?dummy=8484744)](./reports/coverage/index.html)
 
 CI/CD Pipeline:
 
@@ -23,9 +23,10 @@ SonarCloud:
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_bumpcalver&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=devsetgo_bumpcalver)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=devsetgo_bumpcalver&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=devsetgo_bumpcalver)
 
-
-
 # BumpCalver CLI Documentation
+
+## Note
+This project should be consider in beta and is not yet ready for production use.
 
 ## Overview
 
@@ -42,7 +43,8 @@ The **BumpCalver CLI** is a command-line interface for calendar-based version bu
 - [Command-Line Usage](#command-line-usage)
   - [Options](#options)
 - [Examples](#examples)
-
+- [Error Handling](#error-handling)
+- [Support](#support)
 
 ---
 
@@ -82,8 +84,10 @@ The BumpCalver CLI relies on a `pyproject.toml` configuration file located at th
 - `timezone` (string): Timezone for date calculations (e.g., `UTC`, `America/New_York`).
 - `file` (list of tables): Specifies which files to update and how to find the version string.
   - `path` (string): Path to the file to be updated.
+  - `file_type` (string): Type of the file (e.g., `python`, `toml`, `yaml`, `json`, `xml`, `dockerfile`, `makefile`).
   - `variable` (string, optional): The variable name that holds the version string in the file.
   - `pattern` (string, optional): A regex pattern to find the version string.
+  - `version_standard` (string, optional): The versioning standard to follow (e.g., `python` for PEP 440).
 - `git_tag` (boolean): Whether to create a Git tag with the new version.
 - `auto_commit` (boolean): Whether to automatically commit changes when creating a Git tag.
 
@@ -92,13 +96,39 @@ The BumpCalver CLI relies on a `pyproject.toml` configuration file located at th
 ```toml
 [tool.bumpcalver]
 version_format = "{current_date}-{build_count:03}"
-timezone = "UTC"
+timezone = "America/New_York"
 git_tag = true
 auto_commit = true
 
 [[tool.bumpcalver.file]]
-path = "version.py"
+path = "pyproject.toml"
+file_type = "toml"
+variable = "project.version"
+version_standard = "python"
+
+[[tool.bumpcalver.file]]
+path = "examples/makefile"
+file_type = "makefile"
+variable = "APP_VERSION"
+version_standard = "default"
+
+[[tool.bumpcalver.file]]
+path = "examples/dockerfile"
+file_type = "dockerfile"
+variable = "arg.VERSION"
+version_standard = "default"
+
+[[tool.bumpcalver.file]]
+path = "examples/dockerfile"
+file_type = "dockerfile"
+variable = "env.APP_VERSION"
+version_standard = "default"
+
+[[tool.bumpcalver.file]]
+path = "examples/p.py"
+file_type = "python"
 variable = "__version__"
+version_standard = "python"
 ```
 
 ---
@@ -171,13 +201,9 @@ bumpcalver --build --git-tag --auto-commit
 ## Error Handling
 
 - **Unknown Timezone**: If an invalid timezone is specified, the default timezone (`America/New_York`) is used, and a warning is printed.
-
 - **File Not Found**: If a specified file is not found during version update, an error message is printed.
-
 - **Invalid Build Count**: If the existing build count in a file is invalid, it resets to `1`, and a warning is printed.
-
 - **Git Errors**: Errors during Git operations are caught, and an error message is displayed.
-
 - **Malformed Configuration**: If the `pyproject.toml` file is malformed, an error is printed, and the program exits.
 
 ---

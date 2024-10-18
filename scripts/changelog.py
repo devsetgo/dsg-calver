@@ -2,7 +2,7 @@
 import httpx
 import json
 from datetime import datetime
-import pytz
+from zoneinfo import ZoneInfo
 import asyncio
 
 async def get_github_releases():
@@ -14,8 +14,8 @@ async def get_github_releases():
 
 def set_date_time(published_at):
     published_at = datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")
-    published_at = pytz.utc.localize(published_at)  # Make it aware in UTC
-    published_at = published_at.astimezone(pytz.timezone("US/Eastern"))  # Convert to US Eastern Time
+    published_at = published_at.replace(tzinfo=ZoneInfo("UTC"))  # Make it aware in UTC
+    published_at = published_at.astimezone(ZoneInfo("America/New_York"))  # Convert to US Eastern Time
     return published_at.strftime("%Y %B %d, %H:%M")  # Format it to a more human-readable format
 
 async def main():
