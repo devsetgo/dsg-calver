@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "bumpcalver"
 version = "2024.10.18"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 description = "A CLI tool for calendar-based version bumping"
 keywords = [ "python", "library", "calendar versioning", "calver", "versioning", "cli",]
 readme = "README.md"
