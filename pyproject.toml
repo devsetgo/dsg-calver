@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bumpcalver"
-version = "2024.10.20"
+version = "2024.10.20.3"
 requires-python = ">=3.9"
 description = "A CLI tool for calendar-based version bumping"
 keywords = [ "python", "library", "calendar versioning", "calver", "versioning", "cli",]
 readme = "README.md"
-classifiers = [ "License :: OSI Approved :: MIT License", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12",]
+classifiers = [ "License :: OSI Approved :: MIT License", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.9", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13",]
 dependencies = [ "click>=8.0", "toml>=0.10.2", "PyYaml>=6.0.2",]
 [[project.authors]]
 name = "Mike Ryan"
@@ -35,6 +35,13 @@ type = "directory"
 version_format = "{current_date}-{build_count:03}"
 timezone = "America/New_York"
 git_tag = true
+auto_commit = true
+[[tool.bumpcalver.file]]
+path = "makefile"
+file_type = "makefile"
+variable = "APP_VERSION"
+version_standard = "standard"
+
 [[tool.bumpcalver.file]]
 path = "pyproject.toml"
 file_type = "toml"
@@ -46,12 +53,6 @@ path = "src/bumpcalver/__init__.py"
 file_type = "python"
 variable = "__version__"
 version_standard = "python"
-
-[[tool.bumpcalver.file]]
-path = "makefile"
-file_type = "makefile"
-variable = "APP_VERSION"
-version_standard = "standard"
 
 [[tool.bumpcalver.file]]
 path = "examples/makefile"
