@@ -13,7 +13,7 @@ nav:
     - Introduction: 'index.md'
     - QuickStart: 'quickstart.md'
     - Timezones: 'timezones.md'
-    - Modules: 'models.md'
+    # - Modules: 'models.md'
     - About:
       - About: 'about.md'
       - Contributing: 'contribute.md'

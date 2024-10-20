@@ -1,6 +1,6 @@
 # Variables
 REPONAME = bumpcalver
-APP_VERSION = 2024-10-13
+APP_VERSION = 2024-10-20
 PYTHON = python3
 PIP = $(PYTHON) -m pip
 PYTEST = $(PYTHON) -m pytest
@@ -30,17 +30,17 @@ black: ## Reformat Python code to follow the Black code style
 	black $(TESTS_PATH)
 	black $(EXAMPLE_PATH)
 
-bump-ver: ## Bump calver version
+bump: ## Bump calver version
 	bumpcalver --build
 
 cleanup: isort ruff autoflake ## Run isort, ruff, autoflake
 
 create-docs: ## Build and deploy the project's documentation
 	python3 scripts/changelog.py
-	mkdocs build
 	cp /workspaces/$(REPONAME)/README.md /workspaces/$(REPONAME)/docs/index.md
 	cp /workspaces/$(REPONAME)/CONTRIBUTING.md /workspaces/$(REPONAME)/docs/contribute.md
 	cp /workspaces/$(REPONAME)/CHANGELOG.md /workspaces/$(REPONAME)/docs/release-notes.md
+	mkdocs build
 	mkdocs gh-deploy
 
 create-docs-local: ## Build and deploy the project's documentation
@@ -72,6 +72,7 @@ test: ## Run the project's tests
 	pytest
 	sed -i 's|<source>/workspaces/$(REPONAME)</source>|<source>/github/workspace</source>|' /workspaces/$(REPONAME)/coverage.xml
 	genbadge coverage -i /workspaces/$(REPONAME)/coverage.xml
+	genbadge tests -i /workspaces/$(REPONAME)/report.xml
 # flake8 src tests examples | tee htmlcov/_flake8Report.txt
 
 tests: test ## Run the project's tests

@@ -21,15 +21,11 @@ auto_commit = true
 
 [[tool.bumpcalver.file]]
 path = "version.py"
-file_type = "python"
 variable = "__version__"
-version_standard = "python"
 
 [[tool.bumpcalver.file]]
 path = "src/module_name/__init__.py"
-file_type = "python"
 variable = "__version__"
-version_standard = "python"
 ```
 
 This configuration tells **BumpCalver** how to format your version strings, which timezone to use, and which files to update.
@@ -45,7 +41,7 @@ bumpcalver --build
 This command will:
 
 - Increment the build count for the current date.
-- Update the `__version__` variable in `version.py` and `src/module_name/__init__.py`.
+- Update the `__version__` variable in `version.py`.
 - Use the timezone specified in your configuration (`UTC` in this case).
 
 #### Beta Versioning
@@ -135,3 +131,9 @@ print(f"Current version: {__version__}")
 ### Summary
 
 With **BumpCalver**, you can automate version management based on the calendar date and build counts, ensuring consistent and meaningful version numbers across your project.
+
+---
+
+*For any issues or contributions, please visit the [project repository](#) or contact [support](mailto:support@example.com).*
+
+*Note: Replace placeholders with actual URLs or email addresses relevant to your project.*
