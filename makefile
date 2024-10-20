@@ -30,7 +30,7 @@ black: ## Reformat Python code to follow the Black code style
 	black $(TESTS_PATH)
 	black $(EXAMPLE_PATH)
 
-bump-ver: ## Bump calver version
+bump: ## Bump calver version
 	bumpcalver --build
 
 cleanup: isort ruff autoflake ## Run isort, ruff, autoflake
