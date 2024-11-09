@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.40">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.43">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.8c3ca2c6.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.0253249f.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
@@ -809,6 +809,7 @@
 <hr />
 <h2 id="index-configuration">Configuration<a class="headerlink" href="#index-configuration" title="Permanent link">&para;</a></h2>
 <p>The BumpCalver CLI relies on a <code>pyproject.toml</code> configuration file located at the root of your project. This file specifies how versioning should be handled, which files to update, and other settings.</p>
+<p>As an alternative, you can use configuration file named <code>bumpcalver.toml</code>. The CLI will look for this file if <code>pyproject.toml</code> is not found.</p>
 <h3 id="index-configuration-options">Configuration Options<a class="headerlink" href="#index-configuration-options" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>version_format</code> (string): Format string for the version. Should include <code>{current_date}</code> and <code>{build_count}</code> placeholders.</li>
@@ -4084,27 +4085,38 @@ function searchTable() {
 <p>All notable changes to this project will be documented in this file.</p>
 <p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a></p>
 <h2 id="release-notes-latest-changes">Latest Changes<a class="headerlink" href="#release-notes-latest-changes" title="Permanent link">&para;</a></h2>
-<h3 id="release-notes-fix-of-os-classifiers-202410204"><span style='color:blue'>Fix of OS classifiers</span> (<a href="https://github.com/devsetgo/bumpcalver/releases/tag/2024.10.20.4">2024.10.20.4</a>)<a class="headerlink" href="#release-notes-fix-of-os-classifiers-202410204" title="Permanent link">&para;</a></h3>
+<h3 id="release-notes-bumpcalvertoml-option-2024-11-08"><span style='color:blue'>BumpCalver.toml Option</span> (<a href="https://github.com/devsetgo/bumpcalver/releases/tag/2024-11-08">2024-11-08</a>)<a class="headerlink" href="#release-notes-bumpcalvertoml-option-2024-11-08" title="Permanent link">&para;</a></h3>
 <h4 id="release-notes-whats-changed">What's Changed<a class="headerlink" href="#release-notes-whats-changed" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Adding BumpCalver.toml option (#16) @devsetgo</li>
+<li>pip(deps): bump ruff from 0.7.1 to 0.7.2 (#15) @dependabot</li>
+<li>pip(deps): bump mkdocs-material from 9.5.40 to 9.5.43 (#11) @dependabot</li>
+<li>pip(deps): bump ruff from 0.6.9 to 0.7.1 (#12) @dependabot</li>
+<li>pip(deps): bump tox from 4.21.2 to 4.23.2 (#13) @dependabot</li>
+<li>pip(deps): bump pytest-cov from 5.0.0 to 6.0.0 (#14) @dependabot</li>
+</ul>
+<p>Published Date: 2024 November 08, 21:41</p>
+<h3 id="release-notes-fix-of-os-classifiers-202410204"><span style='color:blue'>Fix of OS classifiers</span> (<a href="https://github.com/devsetgo/bumpcalver/releases/tag/2024.10.20.4">2024.10.20.4</a>)<a class="headerlink" href="#release-notes-fix-of-os-classifiers-202410204" title="Permanent link">&para;</a></h3>
+<h4 id="release-notes-whats-changed_1">What's Changed<a class="headerlink" href="#release-notes-whats-changed_1" title="Permanent link">&para;</a></h4>
 <ul>
 <li>Fixing Classifier Gaps (#10) @devsetgo</li>
 </ul>
 <p>Published Date: 2024 October 20, 16:14</p>
 <h3 id="release-notes-fix-of-classifiers-202410203"><span style='color:blue'>Fix of classifiers</span> (<a href="https://github.com/devsetgo/bumpcalver/releases/tag/2024.10.20.3">2024.10.20.3</a>)<a class="headerlink" href="#release-notes-fix-of-classifiers-202410203" title="Permanent link">&para;</a></h3>
-<h4 id="release-notes-whats-changed_1">What's Changed<a class="headerlink" href="#release-notes-whats-changed_1" title="Permanent link">&para;</a></h4>
+<h4 id="release-notes-whats-changed_2">What's Changed<a class="headerlink" href="#release-notes-whats-changed_2" title="Permanent link">&para;</a></h4>
 <ul>
 <li>Updating classifiers (#9) @devsetgo</li>
 </ul>
 <p>Published Date: 2024 October 20, 16:00</p>
 <h3 id="release-notes-adding-python-39-support-20241020"><span style='color:blue'>Adding Python 3.9 Support</span> (<a href="https://github.com/devsetgo/bumpcalver/releases/tag/2024.10.20">2024.10.20</a>)<a class="headerlink" href="#release-notes-adding-python-39-support-20241020" title="Permanent link">&para;</a></h3>
-<h4 id="release-notes-whats-changed_2">What's Changed<a class="headerlink" href="#release-notes-whats-changed_2" title="Permanent link">&para;</a></h4>
+<h4 id="release-notes-whats-changed_3">What's Changed<a class="headerlink" href="#release-notes-whats-changed_3" title="Permanent link">&para;</a></h4>
 <ul>
 <li>Fix to support Python 3.9 and higher (#8) @devsetgo</li>
 <li>Release Ready (#7) @devsetgo</li>
 </ul>
 <p>Published Date: 2024 October 20, 15:35</p>
 <h3 id="release-notes-initial-release-20241018"><span style='color:blue'>Initial Release</span> (<a href="https://github.com/devsetgo/bumpcalver/releases/tag/2024.10.18">2024.10.18</a>)<a class="headerlink" href="#release-notes-initial-release-20241018" title="Permanent link">&para;</a></h3>
-<h2 id="release-notes-whats-changed_3">What's Changed<a class="headerlink" href="#release-notes-whats-changed_3" title="Permanent link">&para;</a></h2>
+<h2 id="release-notes-whats-changed_4">What's Changed<a class="headerlink" href="#release-notes-whats-changed_4" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Initial Work by @devsetgo in https://github.com/devsetgo/bumpcalver/pull/1</li>
 <li>Pre-Release Work by @devsetgo in https://github.com/devsetgo/bumpcalver/pull/4</li>
@@ -4196,7 +4208,7 @@ function searchTable() {
     <script id="__config" type="application/json">{"base": "/", "features": ["navigation.tabs", "navigation.instant", "navigation.tabs.sticky", "toc.integrate", "toc.follow", "navigation.top"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.525ec568.min.js"></script>
+      <script src="../assets/javascripts/bundle.83f73b43.min.js"></script>
       
         <script src="../js/print-site.js"></script>
       
