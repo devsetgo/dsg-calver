@@ -1,4 +1,4 @@
-__version__ = "2024.11.8.rc"
+__version__ = "2024.11.8.release"
 from datetime import datetime
 from zoneinfo import ZoneInfo, available_timezones
 
