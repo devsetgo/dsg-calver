@@ -1,5 +1,5 @@
 [configuration]
-version = "2024-11-09.beta"
+version = "2024-11-09.rc"
 
 [configuration.application]
 name = "ExampleApp"
