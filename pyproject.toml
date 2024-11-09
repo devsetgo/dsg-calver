@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bumpcalver"
-version = "2024.10.20.4"
+version = "2024.11.8"
 requires-python = ">=3.9"
 description = "A CLI tool for calendar-based version bumping"
 keywords = [ "python", "library", "calendar versioning", "calver", "versioning", "cli",]
@@ -149,4 +149,4 @@ exclude_lines = [ "pragma: no cover", "if __name__",]
 norecursedirs = [ "/tests",]
 testpaths = [ "tests",]
 python_files = [ "test_*.py", "*_test.py",]
-addopts = [ "--cov=./", "--cov-report=html", "--cov-report=xml", "--junitxml=report.xml", "-ra", "--strict-markers", "--tb=short", "-p", "pytester",]
+addopts = [ "--cov=./", "--cov-report=html", "--cov-report=xml", "--junitxml=report.xml", "--html=htmlcov/_test_report.html", "--self-contained-html", "-ra", "--strict-markers", "--tb=short", "-p", "pytester",]
