@@ -1,6 +1,6 @@
 # Variables
 REPONAME = bumpcalver
-APP_VERSION = 2024-11-08.1.2.3
+APP_VERSION = 2024-11-08
 PYTHON = python3
 PIP = $(PYTHON) -m pip
 PYTEST = $(PYTHON) -m pytest
