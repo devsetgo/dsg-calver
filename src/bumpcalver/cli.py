@@ -1,3 +1,27 @@
+"""
+BumpCalver CLI.
+
+This module provides a command-line interface for BumpCalver, a tool for calendar-based version bumping.
+It allows users to update version strings in their project's files based on the current date and build count.
+Additionally, it can create Git tags and commit changes automatically.
+
+Functions:
+    main: The main entry point for the CLI.
+
+Example:
+    To bump the version using the current date and build count:
+        $ bumpcalver --build
+
+    To create a beta version:
+        $ bumpcalver --build --beta
+
+    To use a specific timezone:
+        $ bumpcalver --build --timezone Europe/London
+
+    To bump the version, commit changes, and create a Git tag:
+        $ bumpcalver --build --git-tag --auto-commit
+"""
+
 import os
 import sys
 from typing import Any, Dict, List, Optional
@@ -38,7 +62,22 @@ def main(
     git_tag: Optional[bool],
     auto_commit: Optional[bool],
 ) -> None:
-    """ """
+    """
+    The main entry point for the BumpCalver CLI.
+
+    This function handles the command-line options and performs the version bumping,
+    Git tagging, and auto-commit operations based on the provided options.
+
+    Args:
+        beta (bool): Add -beta to version.
+        rc (bool): Add -rc to version.
+        build (bool): Use build count versioning.
+        release (bool): Add -release to version.
+        custom (str): Add -<WhatEverYouWant> to version.
+        timezone (Optional[str]): Timezone for date calculations (default: value from config or America/New_York).
+        git_tag (Optional[bool]): Create a Git tag with the new version.
+        auto_commit (Optional[bool]): Automatically commit changes when creating a Git tag.
+    """
     # Check for mutually exclusive options
     selected_options = [beta, rc, release]
     if custom:

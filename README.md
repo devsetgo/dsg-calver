@@ -79,7 +79,7 @@ bumpcalver --build --git-tag --auto-commit
 
 The BumpCalver CLI relies on a `pyproject.toml` configuration file located at the root of your project. This file specifies how versioning should be handled, which files to update, and other settings.
 
-As an alternative, you can use configuration file named `bumpcalver.toml`. The CLI will look for this file if `pyproject.toml` is not found. 
+As an alternative, you can use configuration file named `bumpcalver.toml`. The CLI will look for this file if `pyproject.toml` is not found.
 
 
 ### Configuration Options

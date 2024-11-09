@@ -1,3 +1,22 @@
+"""
+Configuration loader for BumpCalver.
+
+This module provides functionality to load configuration settings for BumpCalver
+from either a `pyproject.toml` or `bumpcalver.toml` file. The configuration
+includes settings for version format, timezone, file configurations, Git tagging,
+and auto-commit.
+
+The primary configuration file is `pyproject.toml`. If it is not found, the module
+will look for `bumpcalver.toml`.
+
+Functions:
+    load_config: Loads the configuration settings from the configuration file.
+
+Example:
+    config = load_config()
+    print(config["version_format"])
+"""
+
 import os
 import sys
 from typing import Any, Dict
@@ -8,6 +27,20 @@ from .utils import default_timezone, parse_dot_path
 
 
 def load_config() -> Dict[str, Any]:
+    """Loads the configuration settings for BumpCalver.
+
+    This function checks for the existence of `pyproject.toml` or `bumpcalver.toml`
+    in the current directory. It loads the configuration settings from the first
+    file it finds. The configuration includes settings for version format, timezone,
+    file configurations, Git tagging, and auto-commit.
+
+    Returns:
+        Dict[str, Any]: A dictionary containing the configuration settings.
+
+    Raises:
+        toml.TomlDecodeError: If there is an error decoding the TOML file.
+        Exception: If there is an error loading the configuration file.
+    """
     config: Dict[str, Any] = {}
 
     config_file = None
@@ -48,8 +81,13 @@ def load_config() -> Dict[str, Any]:
         except toml.TomlDecodeError as e:
             print(f"Error decoding {config_file}: {e}", file=sys.stderr)
         except Exception as e:
-            print(f"Error loading configuration from {config_file}: {e}", file=sys.stderr)
+            print(
+                f"Error loading configuration from {config_file}: {e}", file=sys.stderr
+            )
     else:
-        print("No configuration file found. Please create either pyproject.toml or bumpcalver.toml.", file=sys.stderr)
+        print(
+            "No configuration file found. Please create either pyproject.toml or bumpcalver.toml.",
+            file=sys.stderr,
+        )
 
     return config
