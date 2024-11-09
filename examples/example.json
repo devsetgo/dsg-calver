@@ -1,5 +1,5 @@
 {
-  "version": "2024-11-08.beta",
+  "version": "2024-11-08.rc",
   "application": {
     "name": "ExampleApp",
     "description": "This is an example application configuration file."
