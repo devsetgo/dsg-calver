@@ -23,5 +23,5 @@ ruff==0.7.2 # Vulnerabilities: None
 toml==0.10.2 # Vulnerabilities: None
 tox==4.23.2 # Vulnerabilities: None
 twine==5.1.1 # Vulnerabilities: None
-wheel==0.44.0 # Vulnerabilities: None
+wheel==0.45.1 # Vulnerabilities: None
 pytest-html==4.1.1
