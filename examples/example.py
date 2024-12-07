@@ -1,4 +1,4 @@
-__version__ = "24.12.06.beta"
+__version__ = "24.12.06.rc"
 from datetime import datetime
 from zoneinfo import ZoneInfo, available_timezones
 
