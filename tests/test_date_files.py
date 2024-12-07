@@ -23,7 +23,7 @@ def test_all_date_formats_written_to_files():
     # with tempfile.TemporaryDirectory() as temp_dir:
     temp_dir = "tests/test_files"
     os.makedirs(temp_dir, exist_ok=True)
-    
+
     for date_format in date_formats:
         # Create a file in the specified directory
         temp_file_path = os.path.join(temp_dir, f"version_{date_format.replace('%', '')}.txt")
@@ -53,8 +53,7 @@ def test_all_date_formats_written_to_files():
             mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
 
             # Generate the version string
-            current_date = get_current_datetime_version(mock_config["timezone"], mock_config["date_format"])
-            expected_version = f"{current_date}-001"
+            get_current_datetime_version(mock_config["timezone"], mock_config["date_format"])
             new_version = get_build_version(
                 mock_config["file_configs"][0],
                 mock_config["version_format"],
