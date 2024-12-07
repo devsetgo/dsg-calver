@@ -93,7 +93,7 @@ As an alternative, for non-Python projects, you can use configuration file named
 - `git_tag` (boolean): Whether to create a Git tag with the new version.
 - `auto_commit` (boolean): Whether to automatically commit changes when creating a Git tag.
 
-### Example Configuration
+### Example Configuration (pyproject.toml)
 
 
 ```toml
@@ -132,6 +132,26 @@ path = "examples/p.py"
 file_type = "python"
 variable = "__version__"
 version_standard = "python"
+```
+
+### Example Configuration (bumpcalver.toml)
+```toml
+version_format = "{current_date}-{build_count:03}"
+timezone = "America/New_York"
+git_tag = false
+auto_commit = false
+
+[[file]]
+path = "makefile"
+file_type = "makefile"
+variable = "APP_VERSION"
+version_standard = "default"
+
+[[file]]
+path = "dockerfile"
+file_type = "dockerfile"
+variable = "env.APP_VERSION"
+version_standard = "default"
 ```
 
 ---
