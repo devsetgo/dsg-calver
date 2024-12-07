@@ -13,23 +13,24 @@ pip install bumpcalver
 Create a `pyproject.toml` file in your project's root directory with the following content:
 
 ```toml
-[tool.bumpcalver]
+tool.bumpcalver]
 version_format = "{current_date}-{build_count:03}"
-timezone = "UTC"
+date_format = "%y.%m.%d"
+timezone = "America/New_York"
 git_tag = true
 auto_commit = true
 
 [[tool.bumpcalver.file]]
-path = "version.py"
-file_type = "python"
-variable = "__version__"
+path = "pyproject.toml"
+file_type = "toml"
+variable = "project.version"
 version_standard = "python"
 
 [[tool.bumpcalver.file]]
-path = "src/module_name/__init__.py"
-file_type = "python"
-variable = "__version__"
-version_standard = "python"
+path = "examples/makefile"
+file_type = "makefile"
+variable = "APP_VERSION"
+version_standard = "default"
 ```
 
 This configuration tells **BumpCalver** how to format your version strings, which timezone to use, and which files to update.
@@ -95,6 +96,19 @@ This command will:
   ```
 
 ---
+
+#### Create Custom Date Formats
+The `date_format` option in the configuration file allows you to customize the date format used in version strings. Here are some examples of how to format dates:
+
+- `%Y.%m.%d` - Full year, month, and day (e.g., `2024.12.25`)
+- `%y.%m.%d` - Year without century, month, and day (e.g., `24.12.25`)
+- `%y.Q%q` - Year and quarter (e.g., `24.Q1`)
+- `%y.%m` - Year and month (e.g., `24.12`)
+- `%y.%j` - Year and day of the year (e.g., `24.001` for January 1st, 2024)
+- `%Y.%j` - Full year and day of the year (e.g., `2024.001` for January 1st, 2024)
+- `%Y.%m` - Full year and month (e.g., `2024.12`)
+- `%Y.Q%q` - Full year and quarter (e.g., `2024.Q1`)
+
 
 ### See Documentation
 
