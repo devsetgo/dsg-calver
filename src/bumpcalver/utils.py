@@ -94,59 +94,24 @@ def parse_version(version: str) -> Optional[tuple]:
         return None
 
 
-def get_current_date(timezone: str = default_timezone) -> str:
-    """Returns the current date in the specified timezone.
-
-    This function returns the current date in the specified timezone. If the
-    specified timezone is not found, it falls back to the default timezone.
-
-    Args:
-        timezone (str): The timezone to use for date calculations (default: "America/New_York").
-
-    Returns:
-        str: The current date in the specified timezone.
-
-    Example:
-        current_date = get_current_date("Europe/London")
-    """
+def get_current_date(timezone: str = default_timezone, date_format: str = "%Y.%m.%d") -> str:
     try:
-        # Attempt to get the specified timezone
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
-        # If the specified timezone is not found, use the default timezone
         print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
         tz = ZoneInfo(default_timezone)
-    # Return the current date in the specified or default timezone
-    return datetime.now(tz).strftime("%Y-%m-%d")
+    return datetime.now(tz).strftime(date_format)
 
 
-def get_current_datetime_version(timezone: str = default_timezone) -> str:
-    """Returns the current date and time in the specified timezone formatted as a version string.
-
-    This function returns the current date and time in the specified timezone formatted
-    as a version string in the format 'YYYY-MM-DD'. If the specified timezone is not found,
-    it falls back to the default timezone.
-
-    Args:
-        timezone (str): The timezone to use for date and time calculations (default: "America/New_York").
-
-    Returns:
-        str: The current date and time formatted as a version string.
-
-    Example:
-        current_datetime_version = get_current_datetime_version("Europe/London")
-    """
+def get_current_datetime_version(timezone: str = default_timezone, date_format: str = "%Y.%m.%d") -> str:
     try:
-        # Attempt to get the specified timezone
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
-        # If the specified timezone is not found, use the default timezone
         print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
         tz = ZoneInfo(default_timezone)
-    # Get the current date and time in the specified or default timezone
     now = datetime.now(tz)
-    # Return the formatted date and time as a version string
-    return now.strftime("%Y-%m-%d")
+    return now.strftime(date_format)
+
 
 
 def get_build_version(

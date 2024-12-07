@@ -84,6 +84,7 @@ def test_build_option(monkeypatch):
     # Mock configuration
     mock_config = {
         "version_format": "{current_date}-{build_count:03}",
+        "date_format": "%Y.%m.%d",
         "file_configs": [
             {
                 "path": "dummy/path/to/file",
@@ -110,12 +111,12 @@ def test_build_option(monkeypatch):
         mock_config["file_configs"][0],
         mock_config["version_format"],
         mock_config["timezone"],
+        mock_config["date_format"],
     )
 
     # Verify the output
     assert result.exit_code == 0
     assert "Updated version to 2023-10-10-001 in specified files." in result.output
-
 
 def test_value_error(monkeypatch):
     # Mock configuration

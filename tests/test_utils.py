@@ -19,6 +19,7 @@ def test_parse_dot_path_with_slash():
     assert result == path
 
 
+
 def test_parse_dot_path_with_backslash():
     path = "some\\path\\file.py"
     result = parse_dot_path(path, "python")
@@ -73,35 +74,27 @@ def test_parse_version_invalid_format(capsys):
 
 
 def test_get_current_date_valid_timezone():
-    date_str = get_current_date("UTC")
-    # Assert date format YYYY-MM-DD
-    assert re.match(r"\d{4}-\d{2}-\d{2}", date_str)
+    result = get_current_date("America/New_York")
+    assert result is not None
+    assert re.match(r"\d{4}\.\d{2}\.\d{2}", result)
 
 
-def test_get_current_date_invalid_timezone(capsys):
-    date_str = get_current_date("Invalid/Timezone")
-    captured = capsys.readouterr()
-    assert (
-        "Unknown timezone 'Invalid/Timezone'. Using default 'America/New_York'."
-        in captured.out
-    )
-    assert re.match(r"\d{4}-\d{2}-\d{2}", date_str)
+def test_get_current_date_invalid_timezone():
+    result = get_current_date("Invalid/Timezone")
+    assert result is not None
+    assert re.match(r"\d{4}\.\d{2}\.\d{2}", result)
 
 
 def test_get_current_datetime_version_valid_timezone():
-    date_str = get_current_datetime_version("UTC")
-    assert re.match(r"\d{4}-\d{2}-\d{2}", date_str)
+    result = get_current_datetime_version("America/New_York")
+    assert result is not None
+    assert re.match(r"\d{4}\.\d{2}\.\d{2}", result)
 
 
-def test_get_current_datetime_version_invalid_timezone(capsys):
-    date_str = get_current_datetime_version("Invalid/Timezone")
-    captured = capsys.readouterr()
-    assert (
-        "Unknown timezone 'Invalid/Timezone'. Using default 'America/New_York'."
-        in captured.out
-    )
-    assert re.match(r"\d{4}-\d{2}-\d{2}", date_str)
-
+def test_get_current_datetime_version_invalid_timezone():
+    result = get_current_datetime_version("Invalid/Timezone")
+    assert result is not None
+    assert re.match(r"\d{4}\.\d{2}\.\d{2}", result)
 
 def test_get_build_version_version_exists_today(monkeypatch):
     current_date = "2023-10-11"

@@ -62,23 +62,6 @@ def main(
     git_tag: Optional[bool],
     auto_commit: Optional[bool],
 ) -> None:
-    """
-    The main entry point for the BumpCalver CLI.
-
-    This function handles the command-line options and performs the version bumping,
-    Git tagging, and auto-commit operations based on the provided options.
-
-    Args:
-        beta (bool): Add -beta to version.
-        rc (bool): Add -rc to version.
-        build (bool): Use build count versioning.
-        release (bool): Add -release to version.
-        custom (str): Add -<WhatEverYouWant> to version.
-        timezone (Optional[str]): Timezone for date calculations (default: value from config or America/New_York).
-        git_tag (Optional[bool]): Create a Git tag with the new version.
-        auto_commit (Optional[bool]): Automatically commit changes when creating a Git tag.
-    """
-    # Check for mutually exclusive options
     selected_options = [beta, rc, release]
     if custom:
         selected_options.append(True)
@@ -88,11 +71,11 @@ def main(
             "Only one of --beta, --rc, --release, or --custom can be set at a time."
         )
 
-    # Load the configuration from pyproject.toml
     config: Dict[str, Any] = load_config()
     version_format: str = config.get(
         "version_format", "{current_date}-{build_count:03}"
     )
+    date_format: str = config.get("date_format", "%Y.%m.%d")
     file_configs: List[Dict[str, Any]] = config.get("file_configs", [])
     config_timezone: str = config.get("timezone", default_timezone)
     config_git_tag: bool = config.get("git_tag", False)
@@ -102,33 +85,24 @@ def main(
         print("No files specified in the configuration.")
         return
 
-    # Use the timezone from the command line if provided; otherwise, use config
     timezone = timezone or config_timezone
-
-    # Determine whether to create a Git tag
     if git_tag is None:
         git_tag = config_git_tag
-
-    # Determine whether to auto-commit changes
     if auto_commit is None:
         auto_commit = config_auto_commit
 
-    # Adjust the base directory
     project_root: str = os.getcwd()
-    # Update file paths to be absolute
     for file_config in file_configs:
         file_config["path"] = os.path.join(project_root, file_config["path"])
 
     try:
-        # Get the new version
         if build:
-            # Use the first file config for getting the build count
             init_file_config: Dict[str, Any] = file_configs[0]
             new_version: str = get_build_version(
-                init_file_config, version_format, timezone
+                init_file_config, version_format, timezone, date_format
             )
         else:
-            new_version = get_current_datetime_version(timezone)
+            new_version = get_current_datetime_version(timezone, date_format)
 
         if beta:
             new_version += ".beta"
@@ -139,10 +113,8 @@ def main(
         elif custom:
             new_version += f".{custom}"
 
-        # Update the version in the specified files
         files_updated: List[str] = update_version_in_files(new_version, file_configs)
 
-        # Create a Git tag if enabled
         if git_tag:
             create_git_tag(new_version, files_updated, auto_commit)
 
@@ -150,7 +122,6 @@ def main(
     except (ValueError, KeyError) as e:
         print(f"Error generating version: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
