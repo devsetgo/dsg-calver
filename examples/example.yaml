@@ -2,7 +2,7 @@ application:
   description: This is an example application configuration file.
   name: ExampleApp
 configuration:
-  version: 2024.12.06
+  version: 24.12.06.beta
 database:
   host: localhost
   password: password
