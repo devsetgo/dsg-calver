@@ -19,7 +19,6 @@ def test_parse_dot_path_with_slash():
     assert result == path
 
 
-
 def test_parse_dot_path_with_backslash():
     path = "some\\path\\file.py"
     result = parse_dot_path(path, "python")
@@ -96,10 +95,11 @@ def test_get_current_datetime_version_invalid_timezone():
     assert result is not None
     assert re.match(r"\d{4}\.\d{2}\.\d{2}", result)
 
+
 def test_get_build_version_version_exists_today(monkeypatch):
     current_date = "2023-10-11"
     monkeypatch.setattr(
-        "src.bumpcalver.utils.get_current_datetime_version", lambda tz: current_date
+        "src.bumpcalver.utils.get_current_datetime_version", lambda tz, df: current_date
     )
 
     mock_handler = mock.Mock()
@@ -114,14 +114,14 @@ def test_get_build_version_version_exists_today(monkeypatch):
         "variable": "__version__",
     }
     version_format = "{current_date}-{build_count}"
-    result = get_build_version(file_config, version_format, "UTC")
+    result = get_build_version(file_config, version_format, "UTC", "%Y-%m-%d")
     assert result == "2023-10-11-2"
 
 
 def test_get_build_version_version_exists_not_today(monkeypatch):
     current_date = "2023-10-11"
     monkeypatch.setattr(
-        "src.bumpcalver.utils.get_current_datetime_version", lambda tz: current_date
+        "src.bumpcalver.utils.get_current_datetime_version", lambda tz, df: current_date
     )
 
     mock_handler = mock.Mock()
@@ -136,14 +136,14 @@ def test_get_build_version_version_exists_not_today(monkeypatch):
         "variable": "__version__",
     }
     version_format = "{current_date}-{build_count}"
-    result = get_build_version(file_config, version_format, "UTC")
+    result = get_build_version(file_config, version_format, "UTC", "%Y-%m-%d")
     assert result == "2023-10-11-1"
 
 
 def test_get_build_version_version_not_found(monkeypatch, capsys):
     current_date = "2023-10-11"
     monkeypatch.setattr(
-        "src.bumpcalver.utils.get_current_datetime_version", lambda tz: current_date
+        "src.bumpcalver.utils.get_current_datetime_version", lambda tz, df: current_date
     )
 
     mock_handler = mock.Mock()
@@ -158,7 +158,7 @@ def test_get_build_version_version_not_found(monkeypatch, capsys):
         "variable": "__version__",
     }
     version_format = "{current_date}-{build_count}"
-    result = get_build_version(file_config, version_format, "UTC")
+    result = get_build_version(file_config, version_format, "UTC", "%Y-%m-%d")
     assert result == "2023-10-11-1"
 
     captured = capsys.readouterr()
@@ -171,7 +171,7 @@ def test_get_build_version_version_not_found(monkeypatch, capsys):
 def test_get_build_version_invalid_version_format(monkeypatch, capsys):
     current_date = "2023-10-11"
     monkeypatch.setattr(
-        "src.bumpcalver.utils.get_current_datetime_version", lambda tz: current_date
+        "src.bumpcalver.utils.get_current_datetime_version", lambda tz, df: current_date
     )
 
     mock_handler = mock.Mock()
@@ -186,7 +186,7 @@ def test_get_build_version_invalid_version_format(monkeypatch, capsys):
         "variable": "__version__",
     }
     version_format = "{current_date}-{build_count}"
-    result = get_build_version(file_config, version_format, "UTC")
+    result = get_build_version(file_config, version_format, "UTC", "%Y-%m-%d")
     assert result == "2023-10-11-1"
 
     captured = capsys.readouterr()
@@ -196,7 +196,7 @@ def test_get_build_version_invalid_version_format(monkeypatch, capsys):
 def test_get_build_version_exception_during_read(monkeypatch, capsys):
     current_date = "2023-10-11"
     monkeypatch.setattr(
-        "src.bumpcalver.utils.get_current_datetime_version", lambda tz: current_date
+        "src.bumpcalver.utils.get_current_datetime_version", lambda tz, df: current_date
     )
 
     mock_handler = mock.Mock()
@@ -211,7 +211,7 @@ def test_get_build_version_exception_during_read(monkeypatch, capsys):
         "variable": "__version__",
     }
     version_format = "{current_date}-{build_count}"
-    result = get_build_version(file_config, version_format, "UTC")
+    result = get_build_version(file_config, version_format, "UTC", "%Y-%m-%d")
     assert result == "2023-10-11-1"
 
     captured = capsys.readouterr()
@@ -221,7 +221,7 @@ def test_get_build_version_exception_during_read(monkeypatch, capsys):
 def test_get_build_version_with_directive(monkeypatch):
     current_date = "2023-10-11"
     monkeypatch.setattr(
-        "src.bumpcalver.utils.get_current_datetime_version", lambda tz: current_date
+        "src.bumpcalver.utils.get_current_datetime_version", lambda tz, df: current_date
     )
 
     mock_handler = mock.Mock()
@@ -237,7 +237,7 @@ def test_get_build_version_with_directive(monkeypatch):
         "directive": "ARG",
     }
     version_format = "{current_date}-{build_count}"
-    result = get_build_version(file_config, version_format, "UTC")
+    result = get_build_version(file_config, version_format, "UTC", "%Y-%m-%d")
     assert result == "2023-10-11-2"
 
     mock_handler.read_version.assert_called_with(

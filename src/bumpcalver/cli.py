@@ -97,11 +97,13 @@ def main(
 
     try:
         if build:
+            print("Build option is set. Calling get_build_version.")
             init_file_config: Dict[str, Any] = file_configs[0]
             new_version: str = get_build_version(
                 init_file_config, version_format, timezone, date_format
             )
         else:
+            print("Build option is not set. Calling get_current_datetime_version.")
             new_version = get_current_datetime_version(timezone, date_format)
 
         if beta:
@@ -113,7 +115,9 @@ def main(
         elif custom:
             new_version += f".{custom}"
 
+        print(f"Calling update_version_in_files with version: {new_version}")
         files_updated: List[str] = update_version_in_files(new_version, file_configs)
+        print(f"Files updated: {files_updated}")
 
         if git_tag:
             create_git_tag(new_version, files_updated, auto_commit)
@@ -122,6 +126,7 @@ def main(
     except (ValueError, KeyError) as e:
         print(f"Error generating version: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

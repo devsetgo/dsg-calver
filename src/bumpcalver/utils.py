@@ -94,7 +94,9 @@ def parse_version(version: str) -> Optional[tuple]:
         return None
 
 
-def get_current_date(timezone: str = default_timezone, date_format: str = "%Y.%m.%d") -> str:
+def get_current_date(
+    timezone: str = default_timezone, date_format: str = "%Y.%m.%d"
+) -> str:
     try:
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
@@ -103,19 +105,25 @@ def get_current_date(timezone: str = default_timezone, date_format: str = "%Y.%m
     return datetime.now(tz).strftime(date_format)
 
 
-def get_current_datetime_version(timezone: str = default_timezone, date_format: str = "%Y.%m.%d") -> str:
+def get_current_datetime_version(
+    timezone: str = default_timezone, date_format: str = "%Y.%m.%d"
+) -> str:
     try:
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
         print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
         tz = ZoneInfo(default_timezone)
     now = datetime.now(tz)
+
+    # Handle quarter formatting
+    if "%q" in date_format:
+        quarter = (now.month - 1) // 3 + 1
+        date_format = date_format.replace("%q", str(quarter))
+
     return now.strftime(date_format)
 
-
-
 def get_build_version(
-    file_config: Dict[str, Any], version_format: str, timezone: str
+    file_config: Dict[str, Any], version_format: str, timezone: str, date_format: str
 ) -> str:
     """Returns the build version string based on the provided file configuration.
 
@@ -130,6 +138,7 @@ def get_build_version(
             - "directive" (str, optional): The directive for Dockerfile (e.g., "ARG" or "ENV").
         version_format (str): The format string for the version.
         timezone (str): The timezone to use for date calculations.
+        date_format (str): The format string for the date.
 
     Returns:
         str: The formatted build version string.
@@ -140,15 +149,15 @@ def get_build_version(
             "file_type": "python",
             "variable": "__version__"
         }
-        build_version = get_build_version(file_config, "{current_date}-{build_count:03}", "America/New_York")
+        build_version = get_build_version(file_config, "{current_date}-{build_count:03}", "America/New_York", "%Y.%m.%d")
     """
     file_path = file_config["path"]
     file_type = file_config.get("file_type", "")
     variable = file_config.get("variable", "")
     directive = file_config.get("directive", "")
 
-    # Get the current date in the specified timezone
-    current_date = get_current_datetime_version(timezone)
+    # Get the current date in the specified timezone and format
+    current_date = get_current_datetime_version(timezone, date_format)
     build_count = 1  # Default build count
 
     try:

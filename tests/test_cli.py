@@ -1,9 +1,10 @@
 # tests/test_cli.py
 
 from unittest import mock
-
 from click.testing import CliRunner
 from src.bumpcalver.cli import main
+
+
 
 
 def test_beta_option():
@@ -117,6 +118,7 @@ def test_build_option(monkeypatch):
     # Verify the output
     assert result.exit_code == 0
     assert "Updated version to 2023-10-10-001 in specified files." in result.output
+
 
 def test_value_error(monkeypatch):
     # Mock configuration
