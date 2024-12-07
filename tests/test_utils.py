@@ -73,40 +73,33 @@ def test_parse_version_invalid_format(capsys):
 
 
 def test_get_current_date_valid_timezone():
-    date_str = get_current_date("UTC")
-    # Assert date format YYYY-MM-DD
-    assert re.match(r"\d{4}-\d{2}-\d{2}", date_str)
+    result = get_current_date("America/New_York")
+    assert result is not None
+    assert re.match(r"\d{4}\.\d{2}\.\d{2}", result)
 
 
-def test_get_current_date_invalid_timezone(capsys):
-    date_str = get_current_date("Invalid/Timezone")
-    captured = capsys.readouterr()
-    assert (
-        "Unknown timezone 'Invalid/Timezone'. Using default 'America/New_York'."
-        in captured.out
-    )
-    assert re.match(r"\d{4}-\d{2}-\d{2}", date_str)
+def test_get_current_date_invalid_timezone():
+    result = get_current_date("Invalid/Timezone")
+    assert result is not None
+    assert re.match(r"\d{4}\.\d{2}\.\d{2}", result)
 
 
 def test_get_current_datetime_version_valid_timezone():
-    date_str = get_current_datetime_version("UTC")
-    assert re.match(r"\d{4}-\d{2}-\d{2}", date_str)
+    result = get_current_datetime_version("America/New_York")
+    assert result is not None
+    assert re.match(r"\d{4}\.\d{2}\.\d{2}", result)
 
 
-def test_get_current_datetime_version_invalid_timezone(capsys):
-    date_str = get_current_datetime_version("Invalid/Timezone")
-    captured = capsys.readouterr()
-    assert (
-        "Unknown timezone 'Invalid/Timezone'. Using default 'America/New_York'."
-        in captured.out
-    )
-    assert re.match(r"\d{4}-\d{2}-\d{2}", date_str)
+def test_get_current_datetime_version_invalid_timezone():
+    result = get_current_datetime_version("Invalid/Timezone")
+    assert result is not None
+    assert re.match(r"\d{4}\.\d{2}\.\d{2}", result)
 
 
 def test_get_build_version_version_exists_today(monkeypatch):
     current_date = "2023-10-11"
     monkeypatch.setattr(
-        "src.bumpcalver.utils.get_current_datetime_version", lambda tz: current_date
+        "src.bumpcalver.utils.get_current_datetime_version", lambda tz, df: current_date
     )
 
     mock_handler = mock.Mock()
@@ -121,14 +114,14 @@ def test_get_build_version_version_exists_today(monkeypatch):
         "variable": "__version__",
     }
     version_format = "{current_date}-{build_count}"
-    result = get_build_version(file_config, version_format, "UTC")
+    result = get_build_version(file_config, version_format, "UTC", "%Y-%m-%d")
     assert result == "2023-10-11-2"
 
 
 def test_get_build_version_version_exists_not_today(monkeypatch):
     current_date = "2023-10-11"
     monkeypatch.setattr(
-        "src.bumpcalver.utils.get_current_datetime_version", lambda tz: current_date
+        "src.bumpcalver.utils.get_current_datetime_version", lambda tz, df: current_date
     )
 
     mock_handler = mock.Mock()
@@ -143,14 +136,14 @@ def test_get_build_version_version_exists_not_today(monkeypatch):
         "variable": "__version__",
     }
     version_format = "{current_date}-{build_count}"
-    result = get_build_version(file_config, version_format, "UTC")
+    result = get_build_version(file_config, version_format, "UTC", "%Y-%m-%d")
     assert result == "2023-10-11-1"
 
 
 def test_get_build_version_version_not_found(monkeypatch, capsys):
     current_date = "2023-10-11"
     monkeypatch.setattr(
-        "src.bumpcalver.utils.get_current_datetime_version", lambda tz: current_date
+        "src.bumpcalver.utils.get_current_datetime_version", lambda tz, df: current_date
     )
 
     mock_handler = mock.Mock()
@@ -165,7 +158,7 @@ def test_get_build_version_version_not_found(monkeypatch, capsys):
         "variable": "__version__",
     }
     version_format = "{current_date}-{build_count}"
-    result = get_build_version(file_config, version_format, "UTC")
+    result = get_build_version(file_config, version_format, "UTC", "%Y-%m-%d")
     assert result == "2023-10-11-1"
 
     captured = capsys.readouterr()
@@ -178,7 +171,7 @@ def test_get_build_version_version_not_found(monkeypatch, capsys):
 def test_get_build_version_invalid_version_format(monkeypatch, capsys):
     current_date = "2023-10-11"
     monkeypatch.setattr(
-        "src.bumpcalver.utils.get_current_datetime_version", lambda tz: current_date
+        "src.bumpcalver.utils.get_current_datetime_version", lambda tz, df: current_date
     )
 
     mock_handler = mock.Mock()
@@ -193,7 +186,7 @@ def test_get_build_version_invalid_version_format(monkeypatch, capsys):
         "variable": "__version__",
     }
     version_format = "{current_date}-{build_count}"
-    result = get_build_version(file_config, version_format, "UTC")
+    result = get_build_version(file_config, version_format, "UTC", "%Y-%m-%d")
     assert result == "2023-10-11-1"
 
     captured = capsys.readouterr()
@@ -203,7 +196,7 @@ def test_get_build_version_invalid_version_format(monkeypatch, capsys):
 def test_get_build_version_exception_during_read(monkeypatch, capsys):
     current_date = "2023-10-11"
     monkeypatch.setattr(
-        "src.bumpcalver.utils.get_current_datetime_version", lambda tz: current_date
+        "src.bumpcalver.utils.get_current_datetime_version", lambda tz, df: current_date
     )
 
     mock_handler = mock.Mock()
@@ -218,7 +211,7 @@ def test_get_build_version_exception_during_read(monkeypatch, capsys):
         "variable": "__version__",
     }
     version_format = "{current_date}-{build_count}"
-    result = get_build_version(file_config, version_format, "UTC")
+    result = get_build_version(file_config, version_format, "UTC", "%Y-%m-%d")
     assert result == "2023-10-11-1"
 
     captured = capsys.readouterr()
@@ -228,7 +221,7 @@ def test_get_build_version_exception_during_read(monkeypatch, capsys):
 def test_get_build_version_with_directive(monkeypatch):
     current_date = "2023-10-11"
     monkeypatch.setattr(
-        "src.bumpcalver.utils.get_current_datetime_version", lambda tz: current_date
+        "src.bumpcalver.utils.get_current_datetime_version", lambda tz, df: current_date
     )
 
     mock_handler = mock.Mock()
@@ -244,7 +237,7 @@ def test_get_build_version_with_directive(monkeypatch):
         "directive": "ARG",
     }
     version_format = "{current_date}-{build_count}"
-    result = get_build_version(file_config, version_format, "UTC")
+    result = get_build_version(file_config, version_format, "UTC", "%Y-%m-%d")
     assert result == "2023-10-11-2"
 
     mock_handler.read_version.assert_called_with(

@@ -27,20 +27,6 @@ from .utils import default_timezone, parse_dot_path
 
 
 def load_config() -> Dict[str, Any]:
-    """Loads the configuration settings for BumpCalver.
-
-    This function checks for the existence of `pyproject.toml` or `bumpcalver.toml`
-    in the current directory. It loads the configuration settings from the first
-    file it finds. The configuration includes settings for version format, timezone,
-    file configurations, Git tagging, and auto-commit.
-
-    Returns:
-        Dict[str, Any]: A dictionary containing the configuration settings.
-
-    Raises:
-        toml.TomlDecodeError: If there is an error decoding the TOML file.
-        Exception: If there is an error loading the configuration file.
-    """
     config: Dict[str, Any] = {}
 
     config_file = None
@@ -64,12 +50,12 @@ def load_config() -> Dict[str, Any]:
             config["version_format"] = bumpcalver_config.get(
                 "version_format", "{current_date}-{build_count:03}"
             )
+            config["date_format"] = bumpcalver_config.get("date_format", "%Y.%m.%d")
             config["timezone"] = bumpcalver_config.get("timezone", default_timezone)
             config["file_configs"] = bumpcalver_config.get("file", [])
             config["git_tag"] = bumpcalver_config.get("git_tag", False)
             config["auto_commit"] = bumpcalver_config.get("auto_commit", False)
 
-            # Print paths for debugging
             for file_config in config["file_configs"]:
                 original_path = file_config["path"]
                 file_type = file_config.get("file_type", "")

@@ -1,9 +1,10 @@
 # tests/test_cli.py
 
 from unittest import mock
-
 from click.testing import CliRunner
 from src.bumpcalver.cli import main
+
+
 
 
 def test_beta_option():
@@ -84,6 +85,7 @@ def test_build_option(monkeypatch):
     # Mock configuration
     mock_config = {
         "version_format": "{current_date}-{build_count:03}",
+        "date_format": "%Y.%m.%d",
         "file_configs": [
             {
                 "path": "dummy/path/to/file",
@@ -110,6 +112,7 @@ def test_build_option(monkeypatch):
         mock_config["file_configs"][0],
         mock_config["version_format"],
         mock_config["timezone"],
+        mock_config["date_format"],
     )
 
     # Verify the output

@@ -94,63 +94,36 @@ def parse_version(version: str) -> Optional[tuple]:
         return None
 
 
-def get_current_date(timezone: str = default_timezone) -> str:
-    """Returns the current date in the specified timezone.
-
-    This function returns the current date in the specified timezone. If the
-    specified timezone is not found, it falls back to the default timezone.
-
-    Args:
-        timezone (str): The timezone to use for date calculations (default: "America/New_York").
-
-    Returns:
-        str: The current date in the specified timezone.
-
-    Example:
-        current_date = get_current_date("Europe/London")
-    """
+def get_current_date(
+    timezone: str = default_timezone, date_format: str = "%Y.%m.%d"
+) -> str:
     try:
-        # Attempt to get the specified timezone
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
-        # If the specified timezone is not found, use the default timezone
         print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
         tz = ZoneInfo(default_timezone)
-    # Return the current date in the specified or default timezone
-    return datetime.now(tz).strftime("%Y-%m-%d")
+    return datetime.now(tz).strftime(date_format)
 
 
-def get_current_datetime_version(timezone: str = default_timezone) -> str:
-    """Returns the current date and time in the specified timezone formatted as a version string.
-
-    This function returns the current date and time in the specified timezone formatted
-    as a version string in the format 'YYYY-MM-DD'. If the specified timezone is not found,
-    it falls back to the default timezone.
-
-    Args:
-        timezone (str): The timezone to use for date and time calculations (default: "America/New_York").
-
-    Returns:
-        str: The current date and time formatted as a version string.
-
-    Example:
-        current_datetime_version = get_current_datetime_version("Europe/London")
-    """
+def get_current_datetime_version(
+    timezone: str = default_timezone, date_format: str = "%Y.%m.%d"
+) -> str:
     try:
-        # Attempt to get the specified timezone
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
-        # If the specified timezone is not found, use the default timezone
         print(f"Unknown timezone '{timezone}'. Using default '{default_timezone}'.")
         tz = ZoneInfo(default_timezone)
-    # Get the current date and time in the specified or default timezone
     now = datetime.now(tz)
-    # Return the formatted date and time as a version string
-    return now.strftime("%Y-%m-%d")
 
+    # Handle quarter formatting
+    if "%q" in date_format:
+        quarter = (now.month - 1) // 3 + 1
+        date_format = date_format.replace("%q", str(quarter))
+
+    return now.strftime(date_format)
 
 def get_build_version(
-    file_config: Dict[str, Any], version_format: str, timezone: str
+    file_config: Dict[str, Any], version_format: str, timezone: str, date_format: str
 ) -> str:
     """Returns the build version string based on the provided file configuration.
 
@@ -165,6 +138,7 @@ def get_build_version(
             - "directive" (str, optional): The directive for Dockerfile (e.g., "ARG" or "ENV").
         version_format (str): The format string for the version.
         timezone (str): The timezone to use for date calculations.
+        date_format (str): The format string for the date.
 
     Returns:
         str: The formatted build version string.
@@ -175,15 +149,15 @@ def get_build_version(
             "file_type": "python",
             "variable": "__version__"
         }
-        build_version = get_build_version(file_config, "{current_date}-{build_count:03}", "America/New_York")
+        build_version = get_build_version(file_config, "{current_date}-{build_count:03}", "America/New_York", "%Y.%m.%d")
     """
     file_path = file_config["path"]
     file_type = file_config.get("file_type", "")
     variable = file_config.get("variable", "")
     directive = file_config.get("directive", "")
 
-    # Get the current date in the specified timezone
-    current_date = get_current_datetime_version(timezone)
+    # Get the current date in the specified timezone and format
+    current_date = get_current_datetime_version(timezone, date_format)
     build_count = 1  # Default build count
 
     try:
