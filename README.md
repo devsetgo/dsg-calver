@@ -81,10 +81,10 @@ The BumpCalver CLI relies on a `pyproject.toml` configuration file located at th
 
 As an alternative, you can use configuration file named `bumpcalver.toml`. The CLI will look for this file if `pyproject.toml` is not found.
 
-
 ### Configuration Options
 
 - `version_format` (string): Format string for the version. Should include `{current_date}` and `{build_count}` placeholders.
+- `date_format` (string): Format string for the date. Supports various combinations of year, month, day, quarter, and week.
 - `timezone` (string): Timezone for date calculations (e.g., `UTC`, `America/New_York`).
 - `file` (list of tables): Specifies which files to update and how to find the version string.
   - `path` (string): Path to the file to be updated.
@@ -100,6 +100,7 @@ As an alternative, you can use configuration file named `bumpcalver.toml`. The C
 ```toml
 [tool.bumpcalver]
 version_format = "{current_date}-{build_count:03}"
+date_format = "%y.%m.%d"
 timezone = "America/New_York"
 git_tag = true
 auto_commit = true
@@ -134,6 +135,21 @@ file_type = "python"
 variable = "__version__"
 version_standard = "python"
 ```
+
+### Date Format Examples
+
+The `date_format` option allows you to customize the date format used in version strings. Here are some examples of how to format dates:
+
+- `%Y.%m.%d` - Full year, month, and day (e.g., `2024.12.25`)
+- `%y.%m.%d` - Year without century, month, and day (e.g., `24.12.25`)
+- `%y.Q%q` - Year and quarter (e.g., `24.Q1`)
+- `%y.%m` - Year and month (e.g., `24.12`)
+- `%y.%j` - Year and day of the year (e.g., `24.001` for January 1st, 2024)
+- `%Y.%j` - Full year and day of the year (e.g., `2024.001` for January 1st, 2024)
+- `%Y.%m` - Full year and month (e.g., `2024.12`)
+- `%Y.Q%q` - Full year and quarter (e.g., `2024.Q1`)
+
+Refer to the [Python datetime documentation](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes) for more format codes.
 
 ---
 
