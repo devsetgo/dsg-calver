@@ -1,5 +1,5 @@
 [configuration]
-version = "24.12.06.release"
+version = "24.12.06.1.2.3"
 
 [configuration.application]
 name = "ExampleApp"
